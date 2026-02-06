@@ -105,13 +105,7 @@
       ],
       "expo-localization",
       "expo-font",
-      [
-"@stripe/stripe-react-native",
-{
-  "merchantIdentifier": "merchant.app.rork.lyven-events",
-  "enableGooglePay": true
-}
-]
+      ["@stripe/stripe-react-native",{"merchantIdentifier":"merchant.app.lyven","enableGooglePay":false}]
     ],
     "experiments": {
       "typedRoutes": false
