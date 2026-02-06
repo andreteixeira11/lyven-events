@@ -34,7 +34,7 @@ export const promoters = sqliteTable('promoters', {
 
 export const promoterProfiles = sqliteTable('promoter_profiles', {
   id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id),
+  userId: text('user_id').notNull().unique().references(() => users.id),
   companyName: text('company_name').notNull(),
   description: text('description').notNull(),
   website: text('website'),
