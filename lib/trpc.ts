@@ -15,10 +15,61 @@ export const getBaseUrl = () => {
   return rorkUrl;
 };
 
+const MAX_RETRIES = 2;
+const RETRY_DELAY = 1500;
+
+const fetchWithRetry = async (url: string | URL | Request, options?: RequestInit): Promise<Response> => {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 0) {
+        console.log(`🔄 Retry attempt ${attempt}/${MAX_RETRIES} for:`, String(url).substring(0, 100));
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+      }
+
+      const response = await fetch(url, options);
+
+      const contentType = response.headers.get('content-type');
+
+      if (!response.ok) {
+        const text = await response.clone().text();
+        console.error('❌ Response error:', response.status, text.substring(0, 300));
+
+        if (!contentType?.includes('application/json')) {
+          throw new Error('O servidor não retornou uma resposta JSON válida.');
+        }
+      }
+
+      if (response.ok && contentType && !contentType.includes('application/json')) {
+        throw new Error('O servidor retornou uma resposta inválida.');
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error;
+      const isNetworkError =
+        error instanceof TypeError ||
+        (error instanceof Error && error.message.toLowerCase().includes('network'));
+
+      if (!isNetworkError || attempt === MAX_RETRIES) {
+        console.error('❌ Fetch failed:', error);
+        throw error;
+      }
+      console.warn(`⚠️ Network error on attempt ${attempt + 1}, will retry...`);
+    }
+  }
+
+  throw lastError;
+};
+
+const trpcUrl = `${getBaseUrl()}/api/trpc`;
+
 export const trpcReactClient = trpc.createClient({
   links: [
     httpLink({
-      url: `${getBaseUrl()}/api/trpc`,
+      url: trpcUrl,
+      fetch: fetchWithRetry,
     }),
   ],
 });
@@ -26,40 +77,8 @@ export const trpcReactClient = trpc.createClient({
 export const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpLink({
-      url: `${getBaseUrl()}/api/trpc`,
-      fetch: async (url, options) => {
-        console.log('🔗 tRPC Request:', url);
-        console.log('📦 Request options:', options?.method, options?.headers);
-        
-        try {
-          const response = await fetch(url, options);
-          console.log('✅ Response status:', response.status);
-          
-          const contentType = response.headers.get('content-type');
-          console.log('📑 Content-Type:', contentType);
-          
-          if (!response.ok) {
-            const text = await response.clone().text();
-            console.error('❌ Response error body:', text.substring(0, 500));
-            
-            if (!contentType?.includes('application/json')) {
-              console.error('❌ Resposta não é JSON! Content-Type:', contentType);
-              throw new Error('O servidor não retornou uma resposta JSON válida. Verifique se o backend está a funcionar corretamente.');
-            }
-          }
-          
-          if (response.ok && contentType && !contentType.includes('application/json')) {
-            const text = await response.clone().text();
-            console.error('❌ Resposta bem-sucedida mas não é JSON:', text.substring(0, 500));
-            throw new Error('O servidor retornou uma resposta inválida.');
-          }
-          
-          return response;
-        } catch (error) {
-          console.error('❌ Fetch error:', error);
-          throw error;
-        }
-      },
+      url: trpcUrl,
+      fetch: fetchWithRetry,
     }),
   ],
 });

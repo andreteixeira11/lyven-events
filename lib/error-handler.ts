@@ -46,8 +46,8 @@ export const handleError = (error: unknown): string => {
   console.error('Error caught:', error);
 
   // Network errors (fetch failed = app cannot reach the backend API)
-  if (error instanceof TypeError && error.message.includes('fetch')) {
-    return 'Cannot reach the server. Check your internet or ensure the backend is running (see RUN_STEPS.md).';
+  if (error instanceof TypeError && (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network'))) {
+    return 'Não foi possível conectar ao servidor. Verifique a sua ligação à internet e tente novamente.';
   }
 
   if (error instanceof NetworkError) {
@@ -86,8 +86,9 @@ export const handleError = (error: unknown): string => {
       return 'Recurso não encontrado.';
     }
     
-    if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch') || errorMessage.includes('Load failed')) {
-      return 'Cannot reach the server. Check your internet or ensure the backend is running (see RUN_STEPS.md).';
+    const lowerMessage = errorMessage.toLowerCase();
+    if (lowerMessage.includes('network') || lowerMessage.includes('fetch') || lowerMessage.includes('failed to fetch') || lowerMessage.includes('load failed')) {
+      return 'Não foi possível conectar ao servidor. Verifique a sua ligação à internet e tente novamente.';
     }
     
     return errorMessage;
