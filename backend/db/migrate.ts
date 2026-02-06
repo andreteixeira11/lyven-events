@@ -41,7 +41,7 @@ export const MIGRATION_STATEMENTS = [
   )`,
   `CREATE TABLE IF NOT EXISTS promoter_profiles (
     id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL REFERENCES users(id),
+    user_id TEXT NOT NULL UNIQUE REFERENCES users(id),
     company_name TEXT NOT NULL,
     description TEXT NOT NULL,
     website TEXT,
@@ -55,6 +55,7 @@ export const MIGRATION_STATEMENTS = [
     rating REAL NOT NULL DEFAULT 0,
     total_events INTEGER NOT NULL DEFAULT 0
   )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS promoter_profiles_user_id_unique ON promoter_profiles(user_id)`,
   `CREATE TABLE IF NOT EXISTS promoter_auth (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
