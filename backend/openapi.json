@@ -1,0 +1,753 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Lyven App API",
+    "version": "1.0.0",
+    "description": "API completa da plataforma Lyven para gestão de eventos, bilhetes, promotores e utilizadores",
+    "contact": {
+      "name": "Lyven Support",
+      "email": "support@lyven.app"
+    }
+  },
+  "servers": [
+    {
+      "url": "{baseUrl}/api/trpc",
+      "description": "Production Server",
+      "variables": {
+        "baseUrl": {
+          "default": "https://your-domain.com",
+          "description": "Base URL do servidor"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "Users",
+      "description": "Gestão de utilizadores"
+    },
+    {
+      "name": "Promoters",
+      "description": "Gestão de promotores"
+    },
+    {
+      "name": "Events",
+      "description": "Gestão de eventos"
+    },
+    {
+      "name": "Tickets",
+      "description": "Gestão de bilhetes"
+    },
+    {
+      "name": "Advertisements",
+      "description": "Gestão de anúncios"
+    },
+    {
+      "name": "Notifications",
+      "description": "Notificações push"
+    },
+    {
+      "name": "Analytics",
+      "description": "Análises e estatísticas"
+    },
+    {
+      "name": "Social",
+      "description": "Funcionalidades sociais"
+    },
+    {
+      "name": "Auth",
+      "description": "Autenticação"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Webhooks para integrações"
+    }
+  ],
+  "paths": {
+    "/users.create": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Criar novo utilizador",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Utilizador criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateUserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users.get": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Obter dados de um utilizador",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dados do utilizador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events.create": {
+      "post": {
+        "tags": ["Events"],
+        "summary": "Criar novo evento",
+        "description": "Criar um novo evento na plataforma. O evento ficará com status 'pending' até aprovação do admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEventInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Evento criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateEventResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events.list": {
+      "post": {
+        "tags": ["Events"],
+        "summary": "Listar eventos",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListEventsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lista de eventos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEventsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events.listPending": {
+      "post": {
+        "tags": ["Events"],
+        "summary": "Listar eventos pendentes de aprovação (Admin)",
+        "security": [
+          {
+            "AdminAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "type": "number",
+                    "default": 50
+                  },
+                  "offset": {
+                    "type": "number",
+                    "default": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lista de eventos pendentes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Event"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events.approve": {
+      "post": {
+        "tags": ["Events"],
+        "summary": "Aprovar evento (Admin)",
+        "security": [
+          {
+            "AdminAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Evento aprovado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "event": {
+                      "$ref": "#/components/schemas/Event"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events.reject": {
+      "post": {
+        "tags": ["Events"],
+        "summary": "Rejeitar evento (Admin)",
+        "security": [
+          {
+            "AdminAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Evento rejeitado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/promoters.listPending": {
+      "post": {
+        "tags": ["Promoters"],
+        "summary": "Listar promotores pendentes de aprovação (Admin)",
+        "security": [
+          {
+            "AdminAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de promotores pendentes"
+          }
+        }
+      }
+    },
+    "/tickets.create": {
+      "post": {
+        "tags": ["Tickets"],
+        "summary": "Comprar bilhete",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicketInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bilhete criado"
+          }
+        }
+      }
+    },
+    "/tickets.validate": {
+      "post": {
+        "tags": ["Tickets"],
+        "summary": "Validar bilhete com QR Code",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "qrCode": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado da validação"
+          }
+        }
+      }
+    },
+    "/advertisements.listPending": {
+      "post": {
+        "tags": ["Advertisements"],
+        "summary": "Listar anúncios pendentes de aprovação (Admin)",
+        "security": [
+          {
+            "AdminAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de anúncios pendentes"
+          }
+        }
+      }
+    },
+    "/analytics.dashboard": {
+      "post": {
+        "tags": ["Analytics"],
+        "summary": "Dashboard de analytics (Admin)",
+        "security": [
+          {
+            "AdminAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do dashboard"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "AdminAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-User-Id",
+        "description": "ID do utilizador admin"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "userType": {
+            "type": "string",
+            "enum": ["normal", "promoter", "admin"]
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateUserInput": {
+        "type": "object",
+        "required": ["name", "email", "userType"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "João Silva"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "joao@example.com"
+          },
+          "userType": {
+            "type": "string",
+            "enum": ["normal", "promoter", "admin"],
+            "example": "normal"
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["music", "concerts"]
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              },
+              "city": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              }
+            }
+          },
+          "preferences": {
+            "type": "object",
+            "properties": {
+              "notifications": {
+                "type": "boolean"
+              },
+              "language": {
+                "type": "string",
+                "enum": ["pt", "en"]
+              },
+              "priceRange": {
+                "type": "object",
+                "properties": {
+                  "min": {
+                    "type": "number"
+                  },
+                  "max": {
+                    "type": "number"
+                  }
+                }
+              },
+              "eventTypes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CreateUserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "image": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["music", "theater", "comedy", "dance", "festival", "other"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "pending", "published", "cancelled", "completed"]
+          },
+          "promoterId": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateEventInput": {
+        "type": "object",
+        "required": ["title", "artists", "venueName", "venueAddress", "venueCity", "venueCapacity", "date", "image", "description", "category", "ticketTypes", "promoterId"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Arctic Monkeys em Lisboa"
+          },
+          "artists": {
+            "type": "string",
+            "description": "JSON string com array de artistas",
+            "example": "[{\"id\":\"1\",\"name\":\"Arctic Monkeys\",\"genre\":\"Rock\",\"image\":\"url\"}]"
+          },
+          "venueName": {
+            "type": "string",
+            "example": "Coliseu dos Recreios"
+          },
+          "venueAddress": {
+            "type": "string",
+            "example": "Rua das Portas de Santo Antão, 96"
+          },
+          "venueCity": {
+            "type": "string",
+            "example": "Lisboa"
+          },
+          "venueCapacity": {
+            "type": "number",
+            "example": 3000
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-03-15T21:00:00.000Z"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.com/event-image.jpg"
+          },
+          "description": {
+            "type": "string",
+            "example": "Os Arctic Monkeys regressam a Lisboa..."
+          },
+          "category": {
+            "type": "string",
+            "enum": ["music", "theater", "comedy", "dance", "festival", "other"],
+            "example": "music"
+          },
+          "ticketTypes": {
+            "type": "string",
+            "description": "JSON string com tipos de bilhetes",
+            "example": "[{\"id\":\"1\",\"name\":\"Plateia\",\"price\":45,\"available\":150,\"maxPerPerson\":4}]"
+          },
+          "promoterId": {
+            "type": "string",
+            "example": "promoter_123"
+          },
+          "tags": {
+            "type": "string",
+            "description": "JSON string com tags",
+            "example": "[\"indie rock\",\"british\"]"
+          },
+          "latitude": {
+            "type": "number",
+            "example": 38.7169
+          },
+          "longitude": {
+            "type": "number",
+            "example": -9.1399
+          },
+          "socialLinks": {
+            "type": "object",
+            "properties": {
+              "instagram": {
+                "type": "string"
+              },
+              "facebook": {
+                "type": "string"
+              },
+              "twitter": {
+                "type": "string"
+              },
+              "website": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "CreateEventResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "event": {
+            "$ref": "#/components/schemas/Event"
+          }
+        }
+      },
+      "ListEventsInput": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "default": 50
+          },
+          "offset": {
+            "type": "number",
+            "default": 0
+          },
+          "category": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "promoterId": {
+            "type": "string"
+          },
+          "search": {
+            "type": "string"
+          },
+          "featured": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ListEventsResponse": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateTicketInput": {
+        "type": "object",
+        "required": ["eventId", "userId", "ticketTypeId", "quantity"],
+        "properties": {
+          "eventId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "ticketTypeId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  }
+}

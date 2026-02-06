@@ -1,0 +1,795 @@
+{
+  "info": {
+    "name": "Lyven App API",
+    "description": "Collection completa de todos os endpoints da API Lyven",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "lyven-api"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://your-domain.com",
+      "type": "string"
+    },
+    {
+      "key": "apiUrl",
+      "value": "{{baseUrl}}/api/trpc",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/auth.login",
+              "host": ["{{apiUrl}}"],
+              "path": ["auth.login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Users",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.result && response.result.data && response.result.data.id) {",
+                  "    pm.collectionVariables.set('userId', response.result.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Silva\",\n  \"email\": \"joao@example.com\",\n  \"userType\": \"normal\",\n  \"interests\": [\"music\", \"concerts\"],\n  \"location\": {\n    \"latitude\": 38.7223,\n    \"longitude\": -9.1393,\n    \"city\": \"Lisboa\",\n    \"region\": \"Portugal\"\n  },\n  \"preferences\": {\n    \"notifications\": true,\n    \"language\": \"pt\",\n    \"priceRange\": {\n      \"min\": 0,\n      \"max\": 100\n    },\n    \"eventTypes\": [\"music\", \"comedy\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/users.create",
+              "host": ["{{apiUrl}}"],
+              "path": ["users.create"]
+            }
+          }
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/users.get",
+              "host": ["{{apiUrl}}"],
+              "path": ["users.get"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{userId}}\",\n  \"name\": \"João Silva Updated\",\n  \"interests\": [\"music\", \"theater\"]\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/users.update",
+              "host": ["{{apiUrl}}"],
+              "path": ["users.update"]
+            }
+          }
+        },
+        {
+          "name": "List Users (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 50,\n  \"offset\": 0,\n  \"userType\": \"normal\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/users.list",
+              "host": ["{{apiUrl}}"],
+              "path": ["users.list"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎉 Events",
+      "item": [
+        {
+          "name": "Create Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.result && response.result.data && response.result.data.id) {",
+                  "    pm.collectionVariables.set('eventId', response.result.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Arctic Monkeys em Lisboa\",\n  \"artists\": \"[{\\\"id\\\":\\\"1\\\",\\\"name\\\":\\\"Arctic Monkeys\\\",\\\"genre\\\":\\\"Indie Rock\\\",\\\"image\\\":\\\"https://example.com/arctic-monkeys.jpg\\\"}]\",\n  \"venueName\": \"Coliseu dos Recreios\",\n  \"venueAddress\": \"Rua das Portas de Santo Antão, 96\",\n  \"venueCity\": \"Lisboa\",\n  \"venueCapacity\": 3000,\n  \"date\": \"2025-03-15T21:00:00.000Z\",\n  \"image\": \"https://example.com/event-image.jpg\",\n  \"description\": \"Os Arctic Monkeys regressam a Lisboa para um concerto único e inesquecível.\",\n  \"category\": \"music\",\n  \"ticketTypes\": \"[{\\\"id\\\":\\\"ticket_1\\\",\\\"name\\\":\\\"Plateia\\\",\\\"price\\\":45,\\\"available\\\":150,\\\"maxPerPerson\\\":4},{\\\"id\\\":\\\"ticket_2\\\",\\\"name\\\":\\\"Balcão\\\",\\\"price\\\":35,\\\"available\\\":200,\\\"maxPerPerson\\\":4}]\",\n  \"promoterId\": \"promoter_123\",\n  \"tags\": \"[\\\"indie rock\\\",\\\"british\\\",\\\"alternative\\\"]\",\n  \"latitude\": 38.7169,\n  \"longitude\": -9.1399,\n  \"socialLinks\": {\n    \"instagram\": \"https://instagram.com/arcticmonkeys\",\n    \"facebook\": \"https://facebook.com/arcticmonkeys\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/events.create",
+              "host": ["{{apiUrl}}"],
+              "path": ["events.create"]
+            }
+          }
+        },
+        {
+          "name": "Get Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{eventId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/events.get",
+              "host": ["{{apiUrl}}"],
+              "path": ["events.get"]
+            }
+          }
+        },
+        {
+          "name": "List Events",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 10,\n  \"offset\": 0,\n  \"category\": \"music\",\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/events.list",
+              "host": ["{{apiUrl}}"],
+              "path": ["events.list"]
+            }
+          }
+        },
+        {
+          "name": "List Pending Events (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 50,\n  \"offset\": 0\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/events.listPending",
+              "host": ["{{apiUrl}}"],
+              "path": ["events.listPending"]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Event Details (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{eventId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/events.getPendingDetails",
+              "host": ["{{apiUrl}}"],
+              "path": ["events.getPendingDetails"]
+            }
+          }
+        },
+        {
+          "name": "Approve Event (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{eventId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/events.approve",
+              "host": ["{{apiUrl}}"],
+              "path": ["events.approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Event (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{eventId}\",\n  \"reason\": \"Informações incompletas ou inadequadas\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/events.reject",
+              "host": ["{{apiUrl}}"],
+              "path": ["events.reject"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎫 Tickets",
+      "item": [
+        {
+          "name": "Create Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"userId\": \"{{userId}}\",\n  \"ticketTypeId\": \"ticket_1\",\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/tickets.create",
+              "host": ["{{apiUrl}}"],
+              "path": ["tickets.create"]
+            }
+          }
+        },
+        {
+          "name": "List User Tickets",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/tickets.list",
+              "host": ["{{apiUrl}}"],
+              "path": ["tickets.list"]
+            }
+          }
+        },
+        {
+          "name": "Validate Ticket (QR Code)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qrCode\": \"TICKET_QR_CODE_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/tickets.validate",
+              "host": ["{{apiUrl}}"],
+              "path": ["tickets.validate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎭 Promoters",
+      "item": [
+        {
+          "name": "Create Promoter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"companyName\": \"Live Events Portugal\",\n  \"description\": \"Organizadores de eventos musicais em Portugal\",\n  \"website\": \"https://liveevents.pt\",\n  \"socialMedia\": {\n    \"instagram\": \"https://instagram.com/liveeventspt\",\n    \"facebook\": \"https://facebook.com/liveeventspt\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/promoters.create",
+              "host": ["{{apiUrl}}"],
+              "path": ["promoters.create"]
+            }
+          }
+        },
+        {
+          "name": "List Pending Promoters (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 50,\n  \"offset\": 0\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/promoters.listPending",
+              "host": ["{{apiUrl}}"],
+              "path": ["promoters.listPending"]
+            }
+          }
+        },
+        {
+          "name": "Approve Promoter (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"promoter_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/promoters.approve",
+              "host": ["{{apiUrl}}"],
+              "path": ["promoters.approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Promoter (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"promoter_id_here\",\n  \"reason\": \"Documentação insuficiente\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/promoters.reject",
+              "host": ["{{apiUrl}}"],
+              "path": ["promoters.reject"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📢 Advertisements",
+      "item": [
+        {
+          "name": "Create Advertisement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Novo Festival de Verão\",\n  \"description\": \"3 dias de música ao vivo\",\n  \"image\": \"https://example.com/ad.jpg\",\n  \"type\": \"banner\",\n  \"position\": \"home_top\",\n  \"startDate\": \"2025-01-01T00:00:00.000Z\",\n  \"endDate\": \"2025-12-31T23:59:59.000Z\",\n  \"budget\": 1000,\n  \"promoterId\": \"promoter_123\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/advertisements.create",
+              "host": ["{{apiUrl}}"],
+              "path": ["advertisements.create"]
+            }
+          }
+        },
+        {
+          "name": "List Pending Ads (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 50,\n  \"offset\": 0\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/advertisements.listPending",
+              "host": ["{{apiUrl}}"],
+              "path": ["advertisements.listPending"]
+            }
+          }
+        },
+        {
+          "name": "Approve Advertisement (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"ad_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/advertisements.approve",
+              "host": ["{{apiUrl}}"],
+              "path": ["advertisements.approve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Analytics (Admin)",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2024-01-01T00:00:00.000Z\",\n  \"endDate\": \"2024-12-31T23:59:59.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/analytics.dashboard",
+              "host": ["{{apiUrl}}"],
+              "path": ["analytics.dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Events Analytics",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2024-01-01T00:00:00.000Z\",\n  \"endDate\": \"2024-12-31T23:59:59.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/analytics.events",
+              "host": ["{{apiUrl}}"],
+              "path": ["analytics.events"]
+            }
+          }
+        },
+        {
+          "name": "Revenue Analytics",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2024-01-01T00:00:00.000Z\",\n  \"endDate\": \"2024-12-31T23:59:59.000Z\",\n  \"groupBy\": \"month\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/analytics.revenue",
+              "host": ["{{apiUrl}}"],
+              "path": ["analytics.revenue"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "item": [
+        {
+          "name": "Register Push Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"token\": \"ExponentPushToken[xxxxxxxxxxxxxx]\",\n  \"platform\": \"ios\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/notifications.registerToken",
+              "host": ["{{apiUrl}}"],
+              "path": ["notifications.registerToken"]
+            }
+          }
+        },
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"unreadOnly\": false,\n  \"limit\": 50\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/notifications.list",
+              "host": ["{{apiUrl}}"],
+              "path": ["notifications.list"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Social",
+      "item": [
+        {
+          "name": "Follow Promoter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"targetId\": \"promoter_123\",\n  \"targetType\": \"promoter\"\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/social.follow",
+              "host": ["{{apiUrl}}"],
+              "path": ["social.follow"]
+            }
+          }
+        },
+        {
+          "name": "Get Followers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetId\": \"promoter_123\",\n  \"targetType\": \"promoter\",\n  \"limit\": 50\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/social.getFollowers",
+              "host": ["{{apiUrl}}"],
+              "path": ["social.getFollowers"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔗 Webhooks",
+      "item": [
+        {
+          "name": "Create Event via Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiKey\": \"your-api-key-here\",\n  \"event\": {\n    \"title\": \"Evento via Webhook\",\n    \"artists\": \"[{\\\"id\\\":\\\"1\\\",\\\"name\\\":\\\"Artista\\\",\\\"genre\\\":\\\"Rock\\\"}]\",\n    \"venueName\": \"Local\",\n    \"venueAddress\": \"Morada\",\n    \"venueCity\": \"Cidade\",\n    \"venueCapacity\": 1000,\n    \"date\": \"2025-06-01T20:00:00.000Z\",\n    \"image\": \"https://example.com/image.jpg\",\n    \"description\": \"Descrição\",\n    \"category\": \"music\",\n    \"ticketTypes\": \"[{\\\"id\\\":\\\"1\\\",\\\"name\\\":\\\"Geral\\\",\\\"price\\\":20,\\\"available\\\":100}]\",\n    \"promoterId\": \"promoter_123\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{apiUrl}}/webhooks.createEvent",
+              "host": ["{{apiUrl}}"],
+              "path": ["webhooks.createEvent"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
