@@ -184,7 +184,7 @@ app.post("/api/migrate", async (c) => {
 
       CREATE TABLE IF NOT EXISTS promoter_profiles (
         id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL REFERENCES users(id),
+        user_id TEXT NOT NULL UNIQUE REFERENCES users(id),
         company_name TEXT NOT NULL,
         description TEXT NOT NULL,
         website TEXT,
