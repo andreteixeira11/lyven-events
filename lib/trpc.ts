@@ -10,7 +10,7 @@ export const getBaseUrl = () => {
     console.log('🌐 TRPC Base URL (backend):', envUrl);
     return envUrl;
   }
-  const rorkUrl = `https://rork.app/pa/hfa30k1ymcso2y545gvqm/backend`;
+  const rorkUrl = `https://rork.app/pa/07mpjpnu098wcqwfiffs1/backend`;
   console.log('🌐 Using default Rork backend URL:', rorkUrl);
   return rorkUrl;
 };
