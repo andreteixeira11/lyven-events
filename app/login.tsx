@@ -14,7 +14,7 @@ import {
   Image,
 } from 'react-native';
 
-import { User, Mail, Eye, EyeOff, Building2 } from 'lucide-react-native';
+import { User, Mail, Eye, EyeOff, Building2, Shield } from 'lucide-react-native';
 import { useUser } from '@/hooks/user-context';
 import { router } from 'expo-router';
 import { RADIUS, SHADOWS, SPACING } from '@/constants/colors';
@@ -24,7 +24,7 @@ import { handleError, AuthError, NetworkError } from '@/lib/error-handler';
 import { LoadingSpinner } from '@/components/LoadingStates';
 
 export default function LoginScreen() {
-  const [userType, setUserType] = useState<'normal' | 'promoter'>('normal');
+  const [userType, setUserType] = useState<'normal' | 'promoter' | 'admin'>('normal');
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -33,8 +33,6 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [backendReachable, setBackendReachable] = useState<boolean | null>(null);
-  const [logoClickCount, setLogoClickCount] = useState(0);
-  const logoClickTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const { updateUser } = useUser();
   const { colors } = useTheme();
@@ -90,25 +88,6 @@ export default function LoginScreen() {
       }),
     ]).start();
   }, [logoOpacity, logoScale, logoRotate]);
-
-  const handleLogoPress = () => {
-    const newCount = logoClickCount + 1;
-    setLogoClickCount(newCount);
-
-    if (logoClickTimeout.current) {
-      clearTimeout(logoClickTimeout.current);
-    }
-
-    if (newCount === 5) {
-      router.push('/admin-dashboard');
-      setLogoClickCount(0);
-      return;
-    }
-
-    logoClickTimeout.current = setTimeout(() => {
-      setLogoClickCount(0);
-    }, 2000);
-  };
 
   const handleAuth = async () => {
     setErrorMessage('');
@@ -205,7 +184,7 @@ export default function LoginScreen() {
           return;
         }
         
-        if (email.toLowerCase() === 'admin' || email.toLowerCase() === 'geral@lyven.pt') {
+        if (email.toLowerCase() === 'admin' || email.toLowerCase() === 'geral@lyven.pt' || email.toLowerCase() === 'info@lyven.pt') {
           setErrorMessage('Este email não pode ser usado para registo.');
           setIsLoading(false);
           return;
@@ -273,18 +252,12 @@ export default function LoginScreen() {
               </View>
             )}
             <View style={styles.header}>
-              <TouchableOpacity 
-                onPress={handleLogoPress}
-                activeOpacity={0.8}
-              >
                 <Animated.View
                   style={[
                     styles.logoContainer,
                     {
                       opacity: logoOpacity,
-                      transform: [
-                        { scale: logoScale },
-                      ],
+                      transform: [{ scale: logoScale }],
                     },
                   ]}
                 >
@@ -294,7 +267,6 @@ export default function LoginScreen() {
                     resizeMode="contain"
                   />
                 </Animated.View>
-              </TouchableOpacity>
             </View>
 
             <View style={styles.form}>
@@ -342,6 +314,29 @@ export default function LoginScreen() {
                     ]}
                   >
                     Promotor
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.userTypeButton,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                    userType === 'admin' && { backgroundColor: colors.primary, borderColor: colors.primary },
+                  ]}
+                  onPress={() => {
+                    setUserType('admin');
+                    setIsLogin(true);
+                  }}
+                >
+                  <Shield size={20} color={userType === 'admin' ? colors.white : colors.primary} />
+                  <Text
+                    style={[
+                      styles.userTypeText,
+                      { color: colors.primary },
+                      userType === 'admin' && { color: colors.white },
+                    ]}
+                  >
+                    Admin
                   </Text>
                 </TouchableOpacity>
               </View>
