@@ -13,6 +13,7 @@ import { ThemeProvider, useTheme } from "@/hooks/theme-context";
 import { OfflineProvider } from "@/hooks/offline-context";
 import { I18nProvider, useI18n } from "@/hooks/i18n-context";
 import { trpc, trpcReactClient } from "@/lib/trpc";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 LogBox.ignoreLogs([
   'deep imports from the "react-native" package are deprecated',
@@ -313,30 +314,32 @@ const styles = StyleSheet.create({
 
 export default function RootLayout() {
   return (
-    <trpc.Provider client={trpcReactClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <I18nProvider>
-          <ThemeProvider>
-            <OfflineProvider>
-              <UserProvider>
-                <NotificationsContext>
-                  <FavoritesContext>
-                    <CalendarProvider>
-                      <SocialProvider>
-                        <CartProvider>
-                          <GestureHandlerRootView style={styles.container}>
-                            <RootLayoutNav />
-                          </GestureHandlerRootView>
-                        </CartProvider>
-                      </SocialProvider>
-                    </CalendarProvider>
-                  </FavoritesContext>
-                </NotificationsContext>
-              </UserProvider>
-            </OfflineProvider>
-          </ThemeProvider>
-        </I18nProvider>
-      </QueryClientProvider>
-    </trpc.Provider>
+    <ErrorBoundary>
+      <trpc.Provider client={trpcReactClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <I18nProvider>
+            <ThemeProvider>
+              <OfflineProvider>
+                <UserProvider>
+                  <NotificationsContext>
+                    <FavoritesContext>
+                      <CalendarProvider>
+                        <SocialProvider>
+                          <CartProvider>
+                            <GestureHandlerRootView style={styles.container}>
+                              <RootLayoutNav />
+                            </GestureHandlerRootView>
+                          </CartProvider>
+                        </SocialProvider>
+                      </CalendarProvider>
+                    </FavoritesContext>
+                  </NotificationsContext>
+                </UserProvider>
+              </OfflineProvider>
+            </ThemeProvider>
+          </I18nProvider>
+        </QueryClientProvider>
+      </trpc.Provider>
+    </ErrorBoundary>
   );
 }

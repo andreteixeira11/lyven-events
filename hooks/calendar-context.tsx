@@ -2,8 +2,16 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import createContextHook from '@nkzw/create-context-hook';
 import { CalendarEvent, EventReminder, QRTicket } from '@/types/event';
 import { Platform } from 'react-native';
-import * as Calendar from 'expo-calendar';
-import * as Notifications from 'expo-notifications';
+
+let Calendar: typeof import('expo-calendar') | null = null;
+
+if (Platform.OS !== 'web') {
+  try {
+    Calendar = require('expo-calendar');
+  } catch (error) {
+    console.log('⚠️ expo-calendar not available:', error);
+  }
+}
 
 interface CalendarContextType {
   calendarEvents: CalendarEvent[];
@@ -77,6 +85,10 @@ export const [CalendarProvider, useCalendar] = createContextHook<CalendarContext
     
     try {
       if (Platform.OS !== 'web') {
+        if (!Calendar) {
+          console.log('Calendar module not available');
+          return false;
+        }
         const { status } = await Calendar.requestCalendarPermissionsAsync();
         if (status !== 'granted') {
           console.log('Calendar permission denied');
@@ -84,7 +96,7 @@ export const [CalendarProvider, useCalendar] = createContextHook<CalendarContext
         }
 
         const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-        const defaultCalendar = calendars.find(cal => cal.source.name === 'Default') || calendars[0];
+        const defaultCalendar = calendars.find((cal: any) => cal.source.name === 'Default') || calendars[0];
 
         if (defaultCalendar) {
           const calendarId = await Calendar.createEventAsync(defaultCalendar.id, {
@@ -92,7 +104,7 @@ export const [CalendarProvider, useCalendar] = createContextHook<CalendarContext
             startDate: eventDate,
             endDate: new Date(eventDate.getTime() + 2 * 60 * 60 * 1000),
             location: venue,
-            notes: `Evento adicionado via DICE App`,
+            notes: `Evento adicionado via LYVEN App`,
           });
 
           const newCalendarEvent: CalendarEvent = {

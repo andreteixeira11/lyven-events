@@ -87,6 +87,7 @@ export const [NotificationsContext, useNotifications] = createContextHook(() => 
   const [notification, setNotification] = useState<any>(undefined);
   const notificationListener = useRef<any>(null);
   const responseListener = useRef<any>(null);
+  const registeredRef = useRef(false);
 
   const registerTokenMutation = trpc.notifications.registerToken.useMutation();
   const notificationsQuery = trpc.notifications.list.useQuery(
@@ -101,37 +102,44 @@ export const [NotificationsContext, useNotifications] = createContextHook(() => 
 
     if (!user?.id) return;
 
-    registerForPushNotificationsAsync()
-      .then(token => {
-        setExpoPushToken(token);
-        if (token && user.id) {
-          const platform = Platform.OS === 'ios' 
-            ? 'ios' 
-            : Platform.OS === 'android' 
-            ? 'android' 
-            : 'web';
-          
-          registerTokenMutation.mutate({
-            userId: user.id,
-            token,
-            platform,
-          });
-        }
-      })
-      .catch(error => {
-        console.log('Notification registration skipped:', error?.message);
-      });
+    if (!registeredRef.current) {
+      registeredRef.current = true;
+      registerForPushNotificationsAsync()
+        .then(token => {
+          setExpoPushToken(token);
+          if (token && user.id) {
+            const platform = Platform.OS === 'ios' 
+              ? 'ios' 
+              : Platform.OS === 'android' 
+              ? 'android' 
+              : 'web';
+            
+            registerTokenMutation.mutate({
+              userId: user.id,
+              token,
+              platform,
+            });
+          }
+        })
+        .catch(error => {
+          console.log('Notification registration skipped:', error?.message);
+          registeredRef.current = false;
+        });
+    }
 
     try {
-      notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-        console.log('Notificação recebida:', notification);
-        setNotification(notification);
-        notificationsQuery.refetch();
-      });
+      if (!notificationListener.current) {
+        notificationListener.current = Notifications.addNotificationReceivedListener(notif => {
+          console.log('Notificação recebida:', notif);
+          setNotification(notif);
+        });
+      }
 
-      responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-        console.log('Resposta à notificação:', response);
-      });
+      if (!responseListener.current) {
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+          console.log('Resposta à notificação:', response);
+        });
+      }
     } catch (error) {
       console.log('⚠️ Failed to add notification listeners:', error);
     }
@@ -140,19 +148,21 @@ export const [NotificationsContext, useNotifications] = createContextHook(() => 
       try {
         if (notificationListener.current) {
           notificationListener.current.remove();
+          notificationListener.current = null;
         }
         if (responseListener.current) {
           responseListener.current.remove();
+          responseListener.current = null;
         }
       } catch (error) {
         console.log('⚠️ Failed to remove notification listeners:', error);
       }
     };
-  }, [user?.id, registerTokenMutation, notificationsQuery]);
+  }, [user?.id]);
 
   const refetchNotifications = useCallback(() => {
     return notificationsQuery.refetch();
-  }, [notificationsQuery]);
+  }, [notificationsQuery.refetch]);
 
   return useMemo(
     () => ({
