@@ -1,24 +1,36 @@
 /**
  * Database entry point: uses Supabase (PostgreSQL) when SUPABASE_DATABASE_URL is set,
- * otherwise uses Turso (libSQL). Ensure env is loaded before this module (e.g. backend/server.ts loads load-env first).
+ * otherwise uses Turso (libSQL). Uses dynamic imports to avoid crash when unused adapter's
+ * native package is unavailable in the deployment environment.
  */
-import * as supabaseDb from './supabase-db';
-import * as tursoDb from './turso-db';
 
 const useSupabase = !!process.env.SUPABASE_DATABASE_URL;
-const active = useSupabase ? supabaseDb : tursoDb;
+
+let active: any = {};
+try {
+  if (useSupabase) {
+    console.log('[db] Loading Supabase adapter...');
+    active = await import('./supabase-db');
+  } else {
+    console.log('[db] Loading Turso adapter...');
+    active = await import('./turso-db');
+  }
+  console.log('[db] Adapter loaded successfully, db exists:', !!active.db);
+} catch (err) {
+  console.error('[db] Failed to load database adapter:', err);
+  active = {};
+}
 
 if (!active.db) {
-  throw new Error(
+  console.error(
     useSupabase
-      ? 'SUPABASE_DATABASE_URL is required. Get it from Supabase Dashboard → Settings → Database → Connection string (URI).'
-      : 'TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are required. Or set SUPABASE_DATABASE_URL to use Supabase as backend.'
+      ? '[db] SUPABASE_DATABASE_URL is set but db could not be initialized.'
+      : '[db] TURSO_DATABASE_URL/TURSO_AUTH_TOKEN missing or db could not be initialized.'
   );
 }
 
-// Export db with 'any' type to allow dual SQLite/PostgreSQL support without type conflicts
-export const db: any = active.db;
-export const executeRaw = active.executeRaw;
+export const db: any = active.db ?? null;
+export const executeRaw = active.executeRaw ?? (async () => { throw new Error('Database not initialized'); });
 
 export const users = active.users;
 export const promoters = active.promoters;
