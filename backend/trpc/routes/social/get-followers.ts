@@ -42,9 +42,9 @@ export const getFollowersProcedure = publicProcedure
         .all();
     }
 
-    const userIds = followRecords.map((f) => f.userId);
+    const userIds = followRecords.map((f: any) => f.userId);
     const allUsers = await db.select().from(users).all();
-    const followers = allUsers.filter((u) => userIds.includes(u.id));
+    const followers = allUsers.filter((u: any) => userIds.includes(u.id));
 
     return {
       followers,

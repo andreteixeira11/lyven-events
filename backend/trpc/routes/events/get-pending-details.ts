@@ -88,7 +88,7 @@ export const getPendingEventDetailsProcedure = publicProcedure
         dailySales: JSON.parse(stats[0].dailySales),
       } : {
         totalTicketsSold: ticketsSold.length,
-        totalRevenue: ticketsSold.reduce((sum, ticket) => sum + ticket.price, 0),
+        totalRevenue: ticketsSold.reduce((sum: number, ticket: any) => sum + ticket.price, 0),
         ticketTypeStats: [],
         dailySales: [],
       },

@@ -20,7 +20,7 @@ export const listNotificationsProcedure = publicProcedure
       .orderBy(desc(notifications.createdAt))
       .limit(input.limit);
 
-    return result.map(n => ({
+    return result.map((n: any) => ({
       ...n,
       data: n.data ? JSON.parse(n.data) : undefined,
     }));

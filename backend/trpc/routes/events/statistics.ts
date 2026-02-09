@@ -47,12 +47,12 @@ export const getEventStatisticsProcedure = publicProcedure
       .where(eq(tickets.eventId, input.id))
       .all();
 
-    const totalTicketsSold = eventTickets.reduce((sum, t) => sum + t.quantity, 0);
-    const totalRevenue = eventTickets.reduce((sum, t) => sum + t.price * t.quantity, 0);
+    const totalTicketsSold = eventTickets.reduce((sum: number, t: any) => sum + t.quantity, 0);
+    const totalRevenue = eventTickets.reduce((sum: number, t: any) => sum + t.price * t.quantity, 0);
 
     const ticketTypeMap = new Map<string, { sold: number; revenue: number }>();
     
-    eventTickets.forEach(ticket => {
+    eventTickets.forEach((ticket: any) => {
       const current = ticketTypeMap.get(ticket.ticketTypeId) || { sold: 0, revenue: 0 };
       current.sold += ticket.quantity;
       current.revenue += ticket.price * ticket.quantity;
@@ -68,7 +68,7 @@ export const getEventStatisticsProcedure = publicProcedure
 
     const dailySalesMap = new Map<string, { tickets: number; revenue: number }>();
     
-    eventTickets.forEach(ticket => {
+    eventTickets.forEach((ticket: any) => {
       const date = ticket.purchaseDate.split('T')[0];
       const current = dailySalesMap.get(date) || { tickets: 0, revenue: 0 };
       current.tickets += ticket.quantity;

@@ -27,7 +27,7 @@ export const getSmartRecommendationsProcedure = publicProcedure
       where: eq(tickets.userId, userId),
     });
 
-    const ticketEventIds = userTickets.map(t => t.eventId);
+    const ticketEventIds = userTickets.map((t: any) => t.eventId);
     const pastEvents = ticketEventIds.length > 0
       ? await db.select().from(events).where(eq(events.id, ticketEventIds[0]))
       : [];
@@ -37,8 +37,8 @@ export const getSmartRecommendationsProcedure = publicProcedure
     
     type EventCategory = 'music' | 'theater' | 'comedy' | 'dance' | 'festival' | 'other';
     const pastEventCategories: EventCategory[] = pastEvents
-      .map((event) => event.category)
-      .filter((cat): cat is EventCategory => Boolean(cat));
+      .map((event: any) => event.category)
+      .filter((cat: any): cat is EventCategory => Boolean(cat));
 
     const upcomingEvents = await db.query.events.findMany({
       where: and(
@@ -55,7 +55,7 @@ export const getSmartRecommendationsProcedure = publicProcedure
       reasons: string[];
     }
 
-    const scoredEvents: ScoredEvent[] = upcomingEvents.map((event) => {
+    const scoredEvents: ScoredEvent[] = upcomingEvents.map((event: any) => {
       let score = 0;
       const reasons: string[] = [];
 

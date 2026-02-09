@@ -78,7 +78,7 @@ export const createEventWebhookProcedure = publicProcedure
     let promoterId: string;
     
     const existingPromoter = await db.query.promoters.findFirst({
-      where: (promoters, { eq }) => eq(promoters.name, input.event.promoter.name),
+      where: (promoters: any, { eq }: any) => eq(promoters.name, input.event.promoter.name),
     });
 
     if (existingPromoter) {

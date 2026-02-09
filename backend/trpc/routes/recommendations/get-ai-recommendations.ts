@@ -27,7 +27,7 @@ export const getAIRecommendationsProcedure = publicProcedure
       limit: 10,
     });
 
-    const ticketEventIds = userTickets.map(t => t.eventId);
+    const ticketEventIds = userTickets.map((t: any) => t.eventId);
     const pastEventsData = ticketEventIds.length > 0
       ? await db.select().from(events).where(eq(events.id, ticketEventIds[0]))
       : [];
@@ -44,14 +44,14 @@ export const getAIRecommendationsProcedure = publicProcedure
       interests: user.interests ? JSON.parse(user.interests) : [],
       location: user.locationCity || '',
       userType: user.userType || 'normal',
-      pastEvents: pastEventsData.map((e) => ({
+      pastEvents: pastEventsData.map((e: any) => ({
         title: e.title,
         category: e.category,
         tags: e.tags ? JSON.parse(e.tags) : [],
       })),
     };
 
-    const eventsData = upcomingEvents.map((e) => ({
+    const eventsData = upcomingEvents.map((e: any) => ({
       id: e.id,
       title: e.title,
       category: e.category,
@@ -95,7 +95,7 @@ Para cada evento, explica porque é uma boa escolha em português.`,
       });
 
       const recommendationsWithEvents = aiResult.recommendations.map((rec) => {
-        const event = upcomingEvents.find((e) => e.id === rec.eventId);
+        const event = upcomingEvents.find((e: any) => e.id === rec.eventId);
         return {
           ...rec,
           event,
@@ -110,7 +110,7 @@ Para cada evento, explica porque é uma boa escolha em português.`,
       console.error('Error generating AI recommendations:', error);
       
       return {
-        recommendations: upcomingEvents.slice(0, limit).map((event) => ({
+        recommendations: upcomingEvents.slice(0, limit).map((event: any) => ({
           eventId: event.id,
           reason: 'Evento recomendado com base na popularidade',
           score: 50,

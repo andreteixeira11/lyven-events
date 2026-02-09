@@ -17,7 +17,7 @@ export const getUsersAnalyticsProcedure = publicProcedure
     let newUsers = allUsers;
     if (input.startDate && input.endDate) {
       newUsers = allUsers.filter(
-        (u) => u.createdAt >= input.startDate! && u.createdAt <= input.endDate!
+        (u: any) => u.createdAt >= input.startDate! && u.createdAt <= input.endDate!
       );
     }
 
@@ -26,20 +26,20 @@ export const getUsersAnalyticsProcedure = publicProcedure
     let activeUserIds = new Set<string>();
     if (input.startDate && input.endDate) {
       const recentTickets = allTickets.filter(
-        (t) => t.purchaseDate >= input.startDate! && t.purchaseDate <= input.endDate!
+        (t: any) => t.purchaseDate >= input.startDate! && t.purchaseDate <= input.endDate!
       );
-      recentTickets.forEach((t) => activeUserIds.add(t.userId));
+      recentTickets.forEach((t: any) => activeUserIds.add(t.userId));
     } else {
-      allTickets.forEach((t) => activeUserIds.add(t.userId));
+      allTickets.forEach((t: any) => activeUserIds.add(t.userId));
     }
 
     const usersByType = {
-      normal: allUsers.filter((u) => u.userType === "normal").length,
-      promoter: allUsers.filter((u) => u.userType === "promoter").length,
-      admin: allUsers.filter((u) => u.userType === "admin").length,
+      normal: allUsers.filter((u: any) => u.userType === "normal").length,
+      promoter: allUsers.filter((u: any) => u.userType === "promoter").length,
+      admin: allUsers.filter((u: any) => u.userType === "admin").length,
     };
 
-    const usersWithPurchases = new Set(allTickets.map((t) => t.userId));
+    const usersWithPurchases = new Set(allTickets.map((t: any) => t.userId));
     const retentionRate = totalUsers > 0 ? (usersWithPurchases.size / totalUsers) * 100 : 0;
 
     return {

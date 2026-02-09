@@ -31,7 +31,7 @@ export const getSearchSuggestionsProcedure = publicProcedure
 
     const suggestions = new Set<string>();
     
-    results.forEach((event) => {
+    results.forEach((event: any) => {
       const queryLower = input.query.toLowerCase();
       if (event.title.toLowerCase().includes(queryLower)) {
         suggestions.add(event.title);

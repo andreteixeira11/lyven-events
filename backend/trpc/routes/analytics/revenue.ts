@@ -16,15 +16,15 @@ export const getRevenueAnalyticsProcedure = publicProcedure
 
     if (input.startDate && input.endDate) {
       allTickets = allTickets.filter(
-        (t) => t.purchaseDate >= input.startDate! && t.purchaseDate <= input.endDate!
+        (t: any) => t.purchaseDate >= input.startDate! && t.purchaseDate <= input.endDate!
       );
     }
 
-    const total = allTickets.reduce((sum, t) => sum + t.price * t.quantity, 0);
+    const total = allTickets.reduce((sum: number, t: any) => sum + t.price * t.quantity, 0);
 
     const periodMap = new Map<string, { revenue: number; tickets: number }>();
 
-    allTickets.forEach((ticket) => {
+    allTickets.forEach((ticket: any) => {
       let period = ticket.purchaseDate.split("T")[0];
 
       if (input.groupBy === "week") {
@@ -49,8 +49,8 @@ export const getRevenueAnalyticsProcedure = publicProcedure
     const allEvents = await db.select().from(events).all();
     const categoryMap = new Map<string, number>();
 
-    allTickets.forEach((ticket) => {
-      const event = allEvents.find((e) => e.id === ticket.eventId);
+    allTickets.forEach((ticket: any) => {
+      const event = allEvents.find((e: any) => e.id === ticket.eventId);
       if (event) {
         const revenue = ticket.price * ticket.quantity;
         categoryMap.set(event.category, (categoryMap.get(event.category) || 0) + revenue);

@@ -10,7 +10,7 @@ export const listTicketsProcedure = publicProcedure
       where: eq(tickets.userId, input.userId),
     });
 
-    return userTickets.map((ticket) => ({
+    return userTickets.map((ticket: any) => ({
       id: ticket.id,
       eventId: ticket.eventId,
       ticketTypeId: ticket.ticketTypeId,

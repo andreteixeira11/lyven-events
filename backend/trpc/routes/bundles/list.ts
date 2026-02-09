@@ -19,13 +19,13 @@ export const listBundlesProcedure = publicProcedure
       .all();
 
     const bundles = allBundles
-      .filter((bundle) => {
+      .filter((bundle: any) => {
         if (input.activeOnly) {
           return bundle.isActive && bundle.validUntil > now;
         }
         return true;
       })
-      .map((bundle) => ({
+      .map((bundle: any) => ({
         ...bundle,
         eventIds: JSON.parse(bundle.eventIds),
       }));

@@ -12,7 +12,7 @@ export const listPendingEventsProcedure = publicProcedure
       .where(eq(events.status, 'pending'));
 
     const eventsWithPromoters = await Promise.all(
-      pendingEvents.map(async (event) => {
+      pendingEvents.map(async (event: any) => {
         const promoter = await db
           .select()
           .from(promoters)

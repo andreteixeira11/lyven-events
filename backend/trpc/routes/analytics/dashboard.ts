@@ -19,14 +19,14 @@ export const getDashboardAnalyticsProcedure = publicProcedure
     let filteredTickets = allTickets;
     if (input.startDate && input.endDate) {
       filteredTickets = allTickets.filter(
-        (t) => t.purchaseDate >= input.startDate! && t.purchaseDate <= input.endDate!
+        (t: any) => t.purchaseDate >= input.startDate! && t.purchaseDate <= input.endDate!
       );
     }
 
     const totalUsers = allUsers.length;
     const totalEvents = allEvents.length;
-    const totalTicketsSold = filteredTickets.reduce((sum, t) => sum + t.quantity, 0);
-    const totalRevenue = filteredTickets.reduce((sum, t) => sum + t.price * t.quantity, 0);
+    const totalTicketsSold = filteredTickets.reduce((sum: number, t: any) => sum + t.quantity, 0);
+    const totalRevenue = filteredTickets.reduce((sum: number, t: any) => sum + t.price * t.quantity, 0);
 
     const activePromoters = await db
       .select()
@@ -53,7 +53,7 @@ export const getDashboardAnalyticsProcedure = publicProcedure
       .all();
 
     const revenueByDay = new Map<string, number>();
-    filteredTickets.forEach((ticket) => {
+    filteredTickets.forEach((ticket: any) => {
       const date = ticket.purchaseDate.split("T")[0];
       const revenue = ticket.price * ticket.quantity;
       revenueByDay.set(date, (revenueByDay.get(date) || 0) + revenue);
@@ -64,8 +64,8 @@ export const getDashboardAnalyticsProcedure = publicProcedure
       .sort((a, b) => a.date.localeCompare(b.date));
 
     const eventSales = new Map<string, { tickets: number; revenue: number; title: string }>();
-    filteredTickets.forEach((ticket) => {
-      const event = allEvents.find((e) => e.id === ticket.eventId);
+    filteredTickets.forEach((ticket: any) => {
+      const event = allEvents.find((e: any) => e.id === ticket.eventId);
       if (event) {
         const current = eventSales.get(ticket.eventId) || {
           tickets: 0,

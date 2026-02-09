@@ -23,21 +23,21 @@ export const getFollowingProcedure = publicProcedure
       .all();
 
     if (input.type === "promoter") {
-      followRecords = followRecords.filter((r) => r.promoterId !== null);
+      followRecords = followRecords.filter((r: any) => r.promoterId !== null);
     } else if (input.type === "artist") {
-      followRecords = followRecords.filter((r) => r.artistId !== null);
+      followRecords = followRecords.filter((r: any) => r.artistId !== null);
     } else if (input.type === "friend") {
-      followRecords = followRecords.filter((r) => r.friendId !== null);
+      followRecords = followRecords.filter((r: any) => r.friendId !== null);
     }
 
     const allPromoters = await db.select().from(promoters).all();
     const allPromoterProfiles = await db.select().from(promoterProfiles).all();
     const allUsers = await db.select().from(users).all();
 
-    const followingList = followRecords.map((record) => {
+    const followingList = followRecords.map((record: any) => {
       if (record.promoterId) {
-        const promoter = allPromoters.find((p) => p.id === record.promoterId);
-        const promoterProfile = allPromoterProfiles.find((p) => p.id === record.promoterId);
+        const promoter = allPromoters.find((p: any) => p.id === record.promoterId);
+        const promoterProfile = allPromoterProfiles.find((p: any) => p.id === record.promoterId);
         
         return {
           id: record.promoterId,
@@ -56,7 +56,7 @@ export const getFollowingProcedure = publicProcedure
           data: { id: record.artistId, name: "Artist Name" },
         };
       } else if (record.friendId) {
-        const friend = allUsers.find((u) => u.id === record.friendId);
+        const friend = allUsers.find((u: any) => u.id === record.friendId);
         return {
           id: record.friendId,
           type: "friend" as const,
@@ -64,7 +64,7 @@ export const getFollowingProcedure = publicProcedure
         };
       }
       return null;
-    }).filter((item) => item !== null);
+    }).filter((item: any) => item !== null);
 
     return {
       following: followingList,

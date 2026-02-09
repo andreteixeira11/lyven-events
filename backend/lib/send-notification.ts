@@ -28,14 +28,14 @@ export async function sendNotification(payload: NotificationPayload) {
     .from(pushTokens)
     .where(eq(pushTokens.userId, payload.userId));
 
-  const activeTokens = userTokens.filter(t => t.isActive);
+  const activeTokens = userTokens.filter((t: any) => t.isActive);
 
   if (activeTokens.length === 0) {
     console.log('⚠️ Nenhum token ativo para o usuário');
     return { notification: notification[0], sent: 0 };
   }
 
-  const expoPushMessages = activeTokens.map(tokenRecord => ({
+  const expoPushMessages = activeTokens.map((tokenRecord: any) => ({
     to: tokenRecord.token,
     sound: 'default' as const,
     title: payload.title,

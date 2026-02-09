@@ -53,7 +53,7 @@ export const searchEventsProcedure = publicProcedure
       .limit(input.limit)
       .all();
 
-    return results.map((event) => ({
+    return results.map((event: any) => ({
       ...event,
       artists: JSON.parse(event.artists),
       ticketTypes: JSON.parse(event.ticketTypes),

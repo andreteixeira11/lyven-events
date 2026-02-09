@@ -17,11 +17,11 @@ export const getEventsAnalyticsProcedure = publicProcedure
     let allEvents = await db.select().from(events).all();
 
     if (input.eventId) {
-      allEvents = allEvents.filter((e) => e.id === input.eventId);
+      allEvents = allEvents.filter((e: any) => e.id === input.eventId);
     }
 
     if (input.promoterId) {
-      allEvents = allEvents.filter((e) => e.promoterId === input.promoterId);
+      allEvents = allEvents.filter((e: any) => e.promoterId === input.promoterId);
     }
 
     const allTickets = await db.select().from(tickets).all();
@@ -29,14 +29,14 @@ export const getEventsAnalyticsProcedure = publicProcedure
     let filteredTickets = allTickets;
     if (input.startDate && input.endDate) {
       filteredTickets = allTickets.filter(
-        (t) => t.purchaseDate >= input.startDate! && t.purchaseDate <= input.endDate!
+        (t: any) => t.purchaseDate >= input.startDate! && t.purchaseDate <= input.endDate!
       );
     }
 
-    const eventAnalytics = allEvents.map((event) => {
-      const eventTickets = filteredTickets.filter((t) => t.eventId === event.id);
-      const ticketsSold = eventTickets.reduce((sum, t) => sum + t.quantity, 0);
-      const revenue = eventTickets.reduce((sum, t) => sum + t.price * t.quantity, 0);
+    const eventAnalytics = allEvents.map((event: any) => {
+      const eventTickets = filteredTickets.filter((t: any) => t.eventId === event.id);
+      const ticketsSold = eventTickets.reduce((sum: number, t: any) => sum + t.quantity, 0);
+      const revenue = eventTickets.reduce((sum: number, t: any) => sum + t.price * t.quantity, 0);
       const capacity = event.venueCapacity;
       const occupancyRate = capacity > 0 ? (ticketsSold / capacity) * 100 : 0;
 

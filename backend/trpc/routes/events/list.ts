@@ -45,7 +45,7 @@ export const listEventsProcedure = publicProcedure
     const eventsList = await query;
 
     const eventsWithPromoters = await Promise.all(
-      eventsList.map(async (event) => {
+      eventsList.map(async (event: any) => {
         const promoter = await db.query.promoters.findFirst({
           where: eq(promoters.id, event.promoterId),
         });

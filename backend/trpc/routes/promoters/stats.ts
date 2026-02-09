@@ -33,8 +33,8 @@ export const getPromoterStatsProcedure = publicProcedure
         .where(eq(tickets.eventId, event.id))
         .all();
 
-      totalTicketsSold += eventTickets.reduce((sum, t) => sum + t.quantity, 0);
-      totalRevenue += eventTickets.reduce((sum, t) => sum + t.price * t.quantity, 0);
+      totalTicketsSold += eventTickets.reduce((sum: number, t: any) => sum + t.quantity, 0);
+      totalRevenue += eventTickets.reduce((sum: number, t: any) => sum + t.price * t.quantity, 0);
     }
 
     const followers = await db
@@ -44,7 +44,7 @@ export const getPromoterStatsProcedure = publicProcedure
       .all();
 
     const upcomingEvents = promoterEvents.filter(
-      (e) => new Date(e.date) > new Date() && e.status === "published"
+      (e: any) => new Date(e.date) > new Date() && e.status === "published"
     ).length;
 
     return {
