@@ -10,9 +10,17 @@ let Device: typeof import('expo-device') | null = null;
 if (Platform.OS !== 'web') {
   try {
     Notifications = require('expo-notifications');
+  } catch (error) {
+    console.log('⚠️ expo-notifications not available:', error);
+  }
+  try {
     Device = require('expo-device');
-    
-    if (Notifications) {
+  } catch (error) {
+    console.log('⚠️ expo-device not available:', error);
+  }
+
+  if (Notifications) {
+    try {
       Notifications.setNotificationHandler({
         handleNotification: async () => ({
           shouldShowAlert: true,
@@ -22,9 +30,9 @@ if (Platform.OS !== 'web') {
           shouldShowList: true,
         }),
       });
+    } catch (error) {
+      console.log('⚠️ Failed to set notification handler:', error);
     }
-  } catch (error) {
-    console.log('⚠️ expo-notifications not available:', error);
   }
 }
 

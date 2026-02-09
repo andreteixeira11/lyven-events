@@ -254,7 +254,7 @@ export default function LoginScreen() {
               <View style={[styles.backendBanner, { backgroundColor: colors.error + '20', borderColor: colors.error }]}>
                 <Text style={[styles.backendBannerTitle, { color: colors.error }]}>Serviço temporariamente indisponível</Text>
                 <Text style={[styles.backendBannerText, { color: colors.text }]}>
-                  O que pode fazer agora: aguarde um momento e toque em "Tentar novamente" abaixo. Se continuar, tente mais tarde ou contacte o suporte.
+                  O que pode fazer agora: aguarde um momento e toque em &ldquo;Tentar novamente&rdquo; abaixo. Se continuar, tente mais tarde ou contacte o suporte.
                 </Text>
                 <TouchableOpacity
                   style={[styles.retryBackendButton, { backgroundColor: colors.primary }]}
@@ -571,7 +571,10 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     fontSize: 16,
-    outlineStyle: 'none' as const,
+    ...Platform.select({
+      web: { outlineStyle: 'none' as const },
+      default: {},
+    }),
   },
   button: {
     borderRadius: RADIUS.md,

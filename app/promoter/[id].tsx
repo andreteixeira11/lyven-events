@@ -236,7 +236,7 @@ export default function PromoterScreen() {
                     <View style={styles.eventDetail}>
                       <MapPin size={14} color={colors.textSecondary} />
                       <Text style={[styles.eventDetailText, { color: colors.textSecondary }]} numberOfLines={1}>
-                        {event.venue.name} · {event.venue.city}
+                        {event.venue?.name} · {event.venue?.city}
                       </Text>
                     </View>
 

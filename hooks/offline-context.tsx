@@ -1,7 +1,18 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import NetInfo from '@react-native-community/netinfo';
+import { Platform } from 'react-native';
+
+let NetInfo: typeof import('@react-native-community/netinfo').default | null = null;
+try {
+  if (Platform.OS !== 'web') {
+    NetInfo = require('@react-native-community/netinfo').default;
+  } else {
+    NetInfo = require('@react-native-community/netinfo').default;
+  }
+} catch (error) {
+  console.warn('⚠️ NetInfo not available:', error);
+}
 
 interface CachedTicket {
   id: string;
@@ -36,18 +47,20 @@ export const [OfflineProvider, useOffline] = createContextHook(() => {
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
     try {
-      unsubscribe = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
-        setIsOnline(state.isConnected ?? true);
-      });
+      if (NetInfo) {
+        unsubscribe = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
+          setIsOnline(state.isConnected ?? true);
+        });
+      }
     } catch (error) {
-      console.error('Failed to subscribe to NetInfo:', error);
+      console.warn('Failed to subscribe to NetInfo:', error);
     }
 
     return () => {
       try {
         if (unsubscribe) unsubscribe();
       } catch (error) {
-        console.error('Failed to unsubscribe from NetInfo:', error);
+        console.warn('Failed to unsubscribe from NetInfo:', error);
       }
     };
   }, []);

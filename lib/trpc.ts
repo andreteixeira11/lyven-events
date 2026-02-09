@@ -30,6 +30,19 @@ class BackendUnavailableError extends Error {
   }
 }
 
+const createTimeoutSignal = (ms: number): AbortSignal => {
+  try {
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+      return AbortSignal.timeout(ms);
+    }
+  } catch (_e) {
+    console.log('AbortSignal.timeout not available, using fallback');
+  }
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+};
+
 const fetchWithRetry = async (url: string | URL | Request, options?: RequestInit): Promise<Response> => {
   let lastError: unknown;
 
@@ -42,7 +55,7 @@ const fetchWithRetry = async (url: string | URL | Request, options?: RequestInit
 
       const response = await fetch(url, {
         ...options,
-        signal: options?.signal ?? AbortSignal.timeout(15000),
+        signal: options?.signal ?? createTimeoutSignal(15000),
       });
 
       const contentType = response.headers.get('content-type');

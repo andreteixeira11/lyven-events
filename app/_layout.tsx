@@ -337,6 +337,24 @@ function GlobalErrorHandler({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function SafeNotificationsProvider({ children }: { children: React.ReactNode }) {
+  try {
+    return <NotificationsContext>{children}</NotificationsContext>;
+  } catch (error) {
+    console.error('NotificationsContext failed to mount:', error);
+    return <>{children}</>;
+  }
+}
+
+function SafeOfflineProvider({ children }: { children: React.ReactNode }) {
+  try {
+    return <OfflineProvider>{children}</OfflineProvider>;
+  } catch (error) {
+    console.error('OfflineProvider failed to mount:', error);
+    return <>{children}</>;
+  }
+}
+
 export default function RootLayout() {
   return (
     <ErrorBoundary>
@@ -345,10 +363,10 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <I18nProvider>
               <ThemeProvider>
-                <OfflineProvider>
+                <SafeOfflineProvider>
                   <UserProvider>
                     <ErrorBoundary>
-                      <NotificationsContext>
+                      <SafeNotificationsProvider>
                         <FavoritesContext>
                           <CalendarProvider>
                             <SocialProvider>
@@ -360,10 +378,10 @@ export default function RootLayout() {
                             </SocialProvider>
                           </CalendarProvider>
                         </FavoritesContext>
-                      </NotificationsContext>
+                      </SafeNotificationsProvider>
                     </ErrorBoundary>
                   </UserProvider>
-                </OfflineProvider>
+                </SafeOfflineProvider>
               </ThemeProvider>
             </I18nProvider>
           </QueryClientProvider>
