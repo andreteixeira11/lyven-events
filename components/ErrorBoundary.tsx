@@ -3,34 +3,49 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  errorCount: number;
 }
 
 export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorCount: 0 };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught error:', error);
-    console.error('Error info:', errorInfo.componentStack);
+    console.error('ErrorBoundary caught error:', error?.message || error);
+    console.error('Error stack:', error?.stack);
+    try {
+      console.error('Error info:', errorInfo?.componentStack);
+    } catch (_logError) {
+      console.error('Could not log component stack');
+    }
   }
 
   handleRestart = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState((prev) => ({
+      hasError: false,
+      error: null,
+      errorCount: prev.errorCount + 1,
+    }));
   };
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
       return (
         <View style={styles.container}>
           <View style={styles.content}>
@@ -42,7 +57,7 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
             {__DEV__ && this.state.error && (
               <View style={styles.errorBox}>
                 <Text style={styles.errorText} numberOfLines={6}>
-                  {this.state.error.toString()}
+                  {this.state.error?.toString?.() || 'Unknown error'}
                 </Text>
               </View>
             )}
@@ -58,7 +73,26 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
       );
     }
 
-    return this.props.children;
+    try {
+      return this.props.children;
+    } catch (error) {
+      console.error('ErrorBoundary render error:', error);
+      return (
+        <View style={styles.container}>
+          <View style={styles.content}>
+            <Text style={styles.emoji}>⚠️</Text>
+            <Text style={styles.title}>Erro ao iniciar</Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={this.handleRestart}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.buttonText}>Tentar Novamente</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
   }
 }
 

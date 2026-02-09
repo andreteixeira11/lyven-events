@@ -1,22 +1,43 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Supabase URL or Anon Key not configured. Some features may not work.');
+let supabase: SupabaseClient;
+
+try {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('⚠️ Supabase URL or Anon Key not configured. Using placeholder.');
+    supabase = createClient('https://placeholder.supabase.co', 'placeholder-key', {
+      auth: {
+        storage: Platform.OS === 'web' ? undefined : AsyncStorage,
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+  } else {
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        storage: Platform.OS === 'web' ? undefined : AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: Platform.OS === 'web',
+      },
+    });
+  }
+} catch (error) {
+  console.error('❌ Failed to create Supabase client:', error);
+  supabase = createClient('https://placeholder.supabase.co', 'placeholder-key', {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: Platform.OS === 'web' ? undefined : AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: Platform.OS === 'web',
-  },
-});
+export { supabase };
 
 export const getSupabaseClient = () => supabase;
 

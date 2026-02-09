@@ -34,11 +34,22 @@ export const [OfflineProvider, useOffline] = createContextHook(() => {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
-      setIsOnline(state.isConnected ?? true);
-    });
+    let unsubscribe: (() => void) | null = null;
+    try {
+      unsubscribe = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
+        setIsOnline(state.isConnected ?? true);
+      });
+    } catch (error) {
+      console.error('Failed to subscribe to NetInfo:', error);
+    }
 
-    return () => unsubscribe();
+    return () => {
+      try {
+        if (unsubscribe) unsubscribe();
+      } catch (error) {
+        console.error('Failed to unsubscribe from NetInfo:', error);
+      }
+    };
   }, []);
 
   useEffect(() => {

@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StyleSheet, LogBox } from "react-native";
+import { StyleSheet, LogBox, Platform } from "react-native";
 import { CartProvider } from "@/hooks/cart-context";
 import { UserProvider } from "@/hooks/user-context";
 import { FavoritesContext } from "@/hooks/favorites-context";
@@ -15,22 +15,30 @@ import { I18nProvider, useI18n } from "@/hooks/i18n-context";
 import { trpc, trpcReactClient } from "@/lib/trpc";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
-LogBox.ignoreLogs([
-  'deep imports from the "react-native" package are deprecated',
-]);
+try {
+  LogBox.ignoreLogs([
+    'deep imports from the "react-native" package are deprecated',
+  ]);
+} catch (_logBoxError) {
+  console.warn('LogBox not available');
+}
 
-
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,
-      retry: false,
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
+let queryClient: QueryClient;
+try {
+  queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 5,
+        retry: false,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+      },
     },
-  },
-});
+  });
+} catch (error) {
+  console.error('Failed to create QueryClient:', error);
+  queryClient = new QueryClient();
+}
 
 function RootLayoutNav() {
   const { colors } = useTheme();
@@ -312,34 +320,55 @@ const styles = StyleSheet.create({
   },
 });
 
+function GlobalErrorHandler({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      const originalHandler = ErrorUtils?.getGlobalHandler?.();
+      ErrorUtils?.setGlobalHandler?.((error: Error, isFatal?: boolean) => {
+        console.error('Global error caught:', error?.message || error);
+        console.error('Is fatal:', isFatal);
+        if (originalHandler) {
+          originalHandler(error, isFatal);
+        }
+      });
+    }
+  }, []);
+
+  return <>{children}</>;
+}
+
 export default function RootLayout() {
   return (
     <ErrorBoundary>
-      <trpc.Provider client={trpcReactClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          <I18nProvider>
-            <ThemeProvider>
-              <OfflineProvider>
-                <UserProvider>
-                  <NotificationsContext>
-                    <FavoritesContext>
-                      <CalendarProvider>
-                        <SocialProvider>
-                          <CartProvider>
-                            <GestureHandlerRootView style={styles.container}>
-                              <RootLayoutNav />
-                            </GestureHandlerRootView>
-                          </CartProvider>
-                        </SocialProvider>
-                      </CalendarProvider>
-                    </FavoritesContext>
-                  </NotificationsContext>
-                </UserProvider>
-              </OfflineProvider>
-            </ThemeProvider>
-          </I18nProvider>
-        </QueryClientProvider>
-      </trpc.Provider>
+      <GlobalErrorHandler>
+        <trpc.Provider client={trpcReactClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <I18nProvider>
+              <ThemeProvider>
+                <OfflineProvider>
+                  <UserProvider>
+                    <ErrorBoundary>
+                      <NotificationsContext>
+                        <FavoritesContext>
+                          <CalendarProvider>
+                            <SocialProvider>
+                              <CartProvider>
+                                <GestureHandlerRootView style={styles.container}>
+                                  <RootLayoutNav />
+                                </GestureHandlerRootView>
+                              </CartProvider>
+                            </SocialProvider>
+                          </CalendarProvider>
+                        </FavoritesContext>
+                      </NotificationsContext>
+                    </ErrorBoundary>
+                  </UserProvider>
+                </OfflineProvider>
+              </ThemeProvider>
+            </I18nProvider>
+          </QueryClientProvider>
+        </trpc.Provider>
+      </GlobalErrorHandler>
     </ErrorBoundary>
   );
 }

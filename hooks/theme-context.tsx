@@ -70,9 +70,14 @@ const darkColors: ThemeColors = {
 
 export const [ThemeProvider, useTheme] = createContextHook(() => {
   const [theme, setTheme] = useState<Theme>('light');
-  const [colorScheme, setColorScheme] = useState<ColorSchemeName>(
-    Appearance.getColorScheme()
-  );
+  const [colorScheme, setColorScheme] = useState<ColorSchemeName>(() => {
+    try {
+      return Appearance.getColorScheme();
+    } catch (error) {
+      console.error('Failed to get color scheme:', error);
+      return 'light';
+    }
+  });
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {

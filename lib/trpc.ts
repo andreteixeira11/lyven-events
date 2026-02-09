@@ -5,14 +5,19 @@ import type { AppRouter } from "@/backend/trpc/app-router";
 export const trpc = createTRPCReact<AppRouter>();
 
 export const getBaseUrl = () => {
-  const envUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
-  if (envUrl) {
-    console.log('🌐 TRPC Base URL (backend):', envUrl);
-    return envUrl;
+  try {
+    const envUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+    if (envUrl) {
+      console.log('🌐 TRPC Base URL (backend):', envUrl);
+      return envUrl;
+    }
+    const rorkUrl = `https://rork.app/pa/07mpjpnu098wcqwfiffs1/backend`;
+    console.log('🌐 Using default Rork backend URL:', rorkUrl);
+    return rorkUrl;
+  } catch (error) {
+    console.error('❌ Error getting base URL:', error);
+    return 'https://rork.app/pa/07mpjpnu098wcqwfiffs1/backend';
   }
-  const rorkUrl = `https://rork.app/pa/07mpjpnu098wcqwfiffs1/backend`;
-  console.log('🌐 Using default Rork backend URL:', rorkUrl);
-  return rorkUrl;
 };
 
 const MAX_RETRIES = 2;
@@ -63,22 +68,55 @@ const fetchWithRetry = async (url: string | URL | Request, options?: RequestInit
   throw lastError;
 };
 
-const trpcUrl = `${getBaseUrl()}/api/trpc`;
+let trpcUrl: string;
+try {
+  trpcUrl = `${getBaseUrl()}/api/trpc`;
+} catch (error) {
+  console.error('❌ Error building tRPC URL:', error);
+  trpcUrl = 'https://rork.app/pa/07mpjpnu098wcqwfiffs1/backend/api/trpc';
+}
 
-export const trpcReactClient = trpc.createClient({
-  links: [
-    httpLink({
-      url: trpcUrl,
-      fetch: fetchWithRetry,
-    }),
-  ],
-});
+let trpcReactClient: ReturnType<typeof trpc.createClient>;
+let trpcClient: ReturnType<typeof createTRPCClient<AppRouter>>;
 
-export const trpcClient = createTRPCClient<AppRouter>({
-  links: [
-    httpLink({
-      url: trpcUrl,
-      fetch: fetchWithRetry,
-    }),
-  ],
-});
+try {
+  trpcReactClient = trpc.createClient({
+    links: [
+      httpLink({
+        url: trpcUrl,
+        fetch: fetchWithRetry,
+      }),
+    ],
+  });
+} catch (error) {
+  console.error('❌ Error creating tRPC React client:', error);
+  trpcReactClient = trpc.createClient({
+    links: [
+      httpLink({
+        url: trpcUrl,
+      }),
+    ],
+  });
+}
+
+try {
+  trpcClient = createTRPCClient<AppRouter>({
+    links: [
+      httpLink({
+        url: trpcUrl,
+        fetch: fetchWithRetry,
+      }),
+    ],
+  });
+} catch (error) {
+  console.error('❌ Error creating tRPC client:', error);
+  trpcClient = createTRPCClient<AppRouter>({
+    links: [
+      httpLink({
+        url: trpcUrl,
+      }),
+    ],
+  });
+}
+
+export { trpcReactClient, trpcClient };
