@@ -45,7 +45,10 @@ export type AppError = NetworkError | AuthError | NotFoundError | ValidationErro
 export const handleError = (error: unknown): string => {
   console.error('Error caught:', error);
 
-  // Network errors (fetch failed = app cannot reach the backend API)
+  if (error && typeof error === 'object' && 'name' in error && error.name === 'BackendUnavailableError') {
+    return String((error as Error).message);
+  }
+
   if (error instanceof TypeError && (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network'))) {
     return 'Não foi possível conectar ao servidor. Verifique a sua ligação à internet e tente novamente.';
   }
@@ -87,6 +90,9 @@ export const handleError = (error: unknown): string => {
     }
     
     const lowerMessage = errorMessage.toLowerCase();
+    if (lowerMessage.includes('temporariamente indispon') || lowerMessage.includes('temporarily unavailable')) {
+      return 'O servidor está temporariamente indisponível. Tente novamente em alguns minutos.';
+    }
     if (lowerMessage.includes('network') || lowerMessage.includes('fetch') || lowerMessage.includes('failed to fetch') || lowerMessage.includes('load failed')) {
       return 'Não foi possível conectar ao servidor. Verifique a sua ligação à internet e tente novamente.';
     }

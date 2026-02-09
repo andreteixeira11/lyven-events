@@ -20,7 +20,7 @@ import { router } from 'expo-router';
 import { RADIUS, SHADOWS, SPACING } from '@/constants/colors';
 import { useTheme } from '@/hooks/theme-context';
 import { trpc, getBaseUrl } from '@/lib/trpc';
-import { handleError, AuthError, NetworkError } from '@/lib/error-handler';
+import { handleError } from '@/lib/error-handler';
 import { LoadingSpinner } from '@/components/LoadingStates';
 
 export default function LoginScreen() {
@@ -41,20 +41,36 @@ export default function LoginScreen() {
   const loginMutation = trpc.auth.login.useMutation();
   const sendCodeMutation = trpc.auth.sendVerificationCode.useMutation();
 
+  const checkBackendHealth = async (): Promise<boolean> => {
+    try {
+      const base = getBaseUrl();
+      const res = await fetch(`${base}/api/health`, { 
+        method: 'GET',
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) return false;
+      const contentType = res.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        console.warn('⚠️ Health check returned non-JSON:', contentType);
+        return false;
+      }
+      const data = await res.json();
+      return data?.status === 'ok';
+    } catch {
+      return false;
+    }
+  };
+
   const checkBackend = () => {
     setBackendReachable(null);
-    const base = getBaseUrl();
-    fetch(`${base}/api/health`, { method: 'GET' })
-      .then((res) => setBackendReachable(res.ok))
-      .catch(() => setBackendReachable(false));
+    checkBackendHealth().then(setBackendReachable);
   };
 
   useEffect(() => {
     let cancelled = false;
-    const base = getBaseUrl();
-    fetch(`${base}/api/health`, { method: 'GET' })
-      .then((res) => { if (!cancelled) setBackendReachable(res.ok); })
-      .catch(() => { if (!cancelled) setBackendReachable(false); });
+    checkBackendHealth().then((ok) => {
+      if (!cancelled) setBackendReachable(ok);
+    });
     return () => { cancelled = true; };
   }, []);
   
