@@ -44,10 +44,13 @@ export default function LoginScreen() {
   const checkBackendHealth = async (): Promise<boolean> => {
     try {
       const base = getBaseUrl();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       const res = await fetch(`${base}/api/health`, { 
         method: 'GET',
-        signal: AbortSignal.timeout(10000),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       if (!res.ok) return false;
       const contentType = res.headers.get('content-type');
       if (!contentType?.includes('application/json')) {
@@ -172,7 +175,8 @@ export default function LoginScreen() {
             eventHistory: result.user.eventHistory ? JSON.parse(result.user.eventHistory) : [],
             following: {
               promoters: [],
-              venues: [],
+              artists: [],
+              friends: [],
             },
             createdAt: result.user.createdAt || new Date().toISOString(),
           };

@@ -27,10 +27,36 @@ export const [UserProvider, useUser] = createContextHook(() => {
         
         if (userData) {
           const parsedUser = JSON.parse(userData);
-          setUser(parsedUser);
-          
-          if (parsedUser.userType === 'promoter' && promoterData) {
-            setPromoterProfile(JSON.parse(promoterData));
+          if (parsedUser && typeof parsedUser === 'object') {
+            const safeUser = {
+              ...parsedUser,
+              interests: Array.isArray(parsedUser.interests) ? parsedUser.interests : [],
+              favoriteEvents: Array.isArray(parsedUser.favoriteEvents) ? parsedUser.favoriteEvents : [],
+              eventHistory: Array.isArray(parsedUser.eventHistory) ? parsedUser.eventHistory : [],
+              following: {
+                promoters: Array.isArray(parsedUser.following?.promoters) ? parsedUser.following.promoters : [],
+                artists: Array.isArray(parsedUser.following?.artists) ? parsedUser.following.artists : [],
+                friends: Array.isArray(parsedUser.following?.friends) ? parsedUser.following.friends : [],
+              },
+              preferences: {
+                notifications: parsedUser.preferences?.notifications ?? true,
+                language: parsedUser.preferences?.language || 'pt',
+                priceRange: {
+                  min: parsedUser.preferences?.priceRange?.min ?? 0,
+                  max: parsedUser.preferences?.priceRange?.max ?? 1000,
+                },
+                eventTypes: Array.isArray(parsedUser.preferences?.eventTypes) ? parsedUser.preferences.eventTypes : [],
+              },
+            };
+            setUser(safeUser as User);
+            
+            if (safeUser.userType === 'promoter' && promoterData) {
+              try {
+                setPromoterProfile(JSON.parse(promoterData));
+              } catch {
+                console.warn('Failed to parse promoter profile');
+              }
+            }
           }
         }
       } catch (error) {
