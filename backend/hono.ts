@@ -12,7 +12,7 @@ app.use("*", cors({
 
 app.get("/", (c) => c.json({ status: "ok", message: "API is running", timestamp: new Date().toISOString() }));
 app.get("/health", (c) => c.json({ status: "ok", message: "Backend is running", timestamp: new Date().toISOString() }));
-app.get("/api/health", (c) => c.json({ status: "ok", message: "Backend is running", timestamp: new Date().toISOString() }));
+app.get("/health", (c) => c.json({ status: "ok", message: "Backend is running", timestamp: new Date().toISOString() }));
 
 let trpcReady = false;
 let trpcError: string | null = null;
@@ -25,7 +25,7 @@ let dbReady = false;
     const { appRouter } = await import("./trpc/app-router");
     const { createContext } = await import("./trpc/create-context");
 
-    app.use("/api/trpc/*", trpcServer({
+    app.use("/trpc/*", trpcServer({
       endpoint: "/api/trpc",
       router: appRouter,
       createContext,
@@ -53,9 +53,9 @@ let dbReady = false;
   }
 })();
 
-app.get("/api", (c) => c.json({ status: "ok", trpcReady, trpcError, dbReady, timestamp: new Date().toISOString() }));
+app.get("/status", (c) => c.json({ status: "ok", trpcReady, trpcError, dbReady, timestamp: new Date().toISOString() }));
 
-app.post("/api/test-login", async (c) => {
+app.post("/test-login", async (c) => {
   try {
     const body = await c.req.json();
     return c.json({ status: "ok", message: "Test endpoint working", received: body });
@@ -64,7 +64,7 @@ app.post("/api/test-login", async (c) => {
   }
 });
 
-app.post("/api/seed", async (c) => {
+app.post("/seed", async (c) => {
   try {
     const { seedDatabase } = await import("./db/seed");
     await seedDatabase();
@@ -116,7 +116,7 @@ app.get("/event/:id", async (c) => {
   }
 });
 
-app.post("/api/stripe/webhook", async (c) => {
+app.post("/stripe/webhook", async (c) => {
   try {
     const { getStripe, getStripeWebhookSecret } = await import("./lib/stripe");
     const stripe = getStripe();
