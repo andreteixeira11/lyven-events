@@ -111,7 +111,8 @@
           "merchantIdentifier": "merchant.app.lyven",
           "enableGooglePay": false
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": false
