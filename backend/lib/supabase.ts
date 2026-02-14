@@ -2,54 +2,51 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let supabaseInstance: SupabaseClient | null = null;
 
+function getEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is required but not defined`);
+  }
+  return value;
+}
+
 export function getSupabase(): SupabaseClient {
   if (!supabaseInstance) {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required');
-    }
-    
+    const supabaseUrl = getEnv('SUPABASE_URL');
+    const supabaseServiceKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+
     supabaseInstance = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
       },
     });
-    
-    console.log('✅ Supabase client initialized');
+
+    console.log('✅ Supabase (service role) client initialized');
   }
-  
+
   return supabaseInstance;
 }
 
 export function getSupabaseUrl(): string {
-  const url = process.env.SUPABASE_URL;
-  if (!url) {
-    throw new Error('SUPABASE_URL is not configured');
-  }
-  return url;
+  return getEnv('SUPABASE_URL');
 }
 
-export function getSupabaseAnonKey(): string {
-  const key = process.env.SUPABASE_ANON_KEY;
-  if (!key) {
-    throw new Error('SUPABASE_ANON_KEY is not configured');
-  }
-  return key;
-}
-
+/**
+ * Verifica conexão com o Supabase (backend).
+ * Usa query neutra que não depende de tabela específica.
+ */
 export async function verifySupabaseConnection(): Promise<boolean> {
   try {
     const supabase = getSupabase();
-    const { error } = await supabase.from('users').select('id').limit(1);
-    
-    if (error && !error.message.includes('does not exist')) {
+
+    const { error } = await supabase.rpc('now'); // função Postgres padrão
+
+    if (error) {
       console.error('❌ Supabase connection error:', error.message);
       return false;
     }
-    
+
     console.log('✅ Supabase connection verified');
     return true;
   } catch (error) {
