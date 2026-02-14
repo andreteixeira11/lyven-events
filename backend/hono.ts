@@ -4,29 +4,21 @@ import { cors } from "hono/cors";
 const app = new Hono();
 
 /* =====================================================
-   CORS (PRODUÇÃO SEGURA)
+   CORS (APP MOBILE - PUBLICADA NAS STORES)
+   Mobile não precisa restrição de origin
 ===================================================== */
-
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://teu-dominio.com",
-];
 
 app.use(
   "*",
   cors({
-    origin: (origin) => {
-      if (!origin) return "";
-      return allowedOrigins.includes(origin) ? origin : "";
-    },
+    origin: "*",
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
   })
 );
 
 /* =====================================================
-   HEALTH
+   HEALTH CHECKS
 ===================================================== */
 
 app.get("/", (c) =>
@@ -46,7 +38,7 @@ app.get("/health", (c) =>
 );
 
 /* =====================================================
-   STATUS
+   STATUS FLAGS
 ===================================================== */
 
 let trpcReady = false;
@@ -101,6 +93,10 @@ let dbReady = false;
   }
 })();
 
+/* =====================================================
+   STATUS ENDPOINT
+===================================================== */
+
 app.get("/status", (c) =>
   c.json({
     status: "ok",
@@ -112,16 +108,30 @@ app.get("/status", (c) =>
 );
 
 /* =====================================================
-   PROTEÇÃO DE ROTAS ADMIN
+   ADMIN PROTECTION (para seed)
 ===================================================== */
 
 function requireAdmin(c: any) {
   const key = c.req.header("x-admin-key");
-  if (key !== process.env.ADMIN_SECRET) {
-    return false;
-  }
-  return true;
+  return key && key === process.env.ADMIN_SECRET;
 }
+
+/* =====================================================
+   TEST ENDPOINT
+===================================================== */
+
+app.post("/test-login", async (c) => {
+  try {
+    const body = await c.req.json();
+    return c.json({
+      status: "ok",
+      message: "Test endpoint working",
+      received: body,
+    });
+  } catch {
+    return c.json({ error: "Failed to parse body" }, 400);
+  }
+});
 
 /* =====================================================
    SEED (PROTEGIDO)
@@ -170,13 +180,13 @@ app.post("/stripe/webhook", async (c) => {
         signature,
         webhookSecret
       );
-    } catch (err) {
+    } catch {
       return c.json({ error: "Invalid signature" }, 400);
     }
 
     if (event.type === "checkout.session.completed") {
       console.log("✅ Stripe payment completed");
-      // Mantém aqui tua lógica
+      // Mantém aqui tua lógica de tickets
     }
 
     return c.json({ received: true });
