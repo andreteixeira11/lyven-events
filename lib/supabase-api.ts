@@ -2,6 +2,12 @@ import { supabase } from './supabase';
 import { mockEvents, mockAdvertisements, mockEventStatistics } from '@/mocks/events';
 import { Event, Promoter, EventCategory } from '@/types/event';
 
+function getBackendUrl(): string {
+  const url = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  if (url) return url.endsWith('/') ? url.slice(0, -1) : url;
+  return '';
+}
+
 interface DbPromoter {
   id: string;
   name: string;
@@ -356,67 +362,79 @@ export const authApi = {
   },
 
   sendVerificationCode: async (input: { email: string; name: string; password: string }): Promise<{ success: boolean }> => {
-    console.log('📧 Registering user via Supabase Auth...');
+    console.log('📧 Sending verification code via Resend...');
+    const backendUrl = getBackendUrl();
+
+    if (!backendUrl) {
+      console.error('❌ Backend URL not configured');
+      throw new Error('Backend não configurado. Contacte o suporte.');
+    }
+
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: input.email,
-        password: input.password,
-        options: {
-          data: {
-            name: input.name,
-            full_name: input.name,
-            userType: 'normal',
-          },
-        },
+      const response = await fetch(`${backendUrl}/api/send-verification-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: input.email.toLowerCase(),
+          name: input.name,
+          password: input.password,
+        }),
       });
 
-      if (error) {
-        console.error('❌ Supabase signUp error:', error.message);
-        if (error.message.includes('already registered') || error.message.includes('already exists')) {
-          throw new Error('Este email já está registado. Tente fazer login.');
-        }
-        throw new Error(error.message);
-      }
+      const result = await response.json();
+      console.log('📧 Send code response:', JSON.stringify(result));
 
-      console.log('✅ Supabase signUp success');
-
-      try {
-        await supabase.from('users').upsert({
-          id: data.user?.id || `user_${Date.now()}`,
-          name: input.name,
-          email: input.email.toLowerCase(),
-          user_type: 'normal',
-          is_onboarding_complete: false,
-          created_at: new Date().toISOString(),
-        });
-      } catch (profileErr) {
-        console.log('ℹ️ Could not create user profile (table may not exist):', profileErr);
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Falha ao enviar código de verificação.');
       }
 
       return { success: true };
-    } catch (err) {
-      console.error('❌ Registration error:', err);
+    } catch (err: any) {
+      console.error('❌ Send verification code error:', err);
+      if (err.message?.includes('fetch') || err.message?.includes('network') || err.message?.includes('Network')) {
+        throw new Error('Erro de rede. Verifique a sua conexão e tente novamente.');
+      }
       throw err;
     }
   },
 
-  verifyCode: async (input: { email: string; code: string }): Promise<{ success: boolean; verified: boolean }> => {
+  verifyCode: async (input: { email: string; code: string }): Promise<{ success: boolean; verified: boolean; userData?: { name: string; password: string } }> => {
     console.log('🔑 Verifying code for:', input.email);
+    const backendUrl = getBackendUrl();
+
+    if (!backendUrl) {
+      console.error('❌ Backend URL not configured');
+      throw new Error('Backend não configurado. Contacte o suporte.');
+    }
+
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: input.email,
-        token: input.code,
-        type: 'signup',
+      const response = await fetch(`${backendUrl}/api/verify-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: input.email.toLowerCase(),
+          code: input.code,
+        }),
       });
 
-      if (error) {
-        console.log('⚠️ OTP verification failed, auto-confirming:', error.message);
-        return { success: true, verified: true };
+      const result = await response.json();
+      console.log('🔑 Verify code response:', JSON.stringify(result));
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Código inválido ou expirado.');
       }
 
-      return { success: true, verified: true };
-    } catch {
-      return { success: true, verified: true };
+      return {
+        success: true,
+        verified: true,
+        userData: result.userData,
+      };
+    } catch (err: any) {
+      console.error('❌ Verify code error:', err);
+      if (err.message?.includes('fetch') || err.message?.includes('network') || err.message?.includes('Network')) {
+        throw new Error('Erro de rede. Verifique a sua conexão e tente novamente.');
+      }
+      throw err;
     }
   },
 };

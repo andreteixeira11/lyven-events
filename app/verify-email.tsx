@@ -20,6 +20,7 @@ import { COLORS } from '@/constants/colors';
 import { useUser } from '@/hooks/user-context';
 import { trpc } from '@/lib/trpc';
 import { handleError } from '@/lib/error-handler';
+import { supabase } from '@/lib/supabase';
 
 const CODE_LENGTH = 6;
 const CODE_EXPIRY_MINUTES = 3;
@@ -159,9 +160,33 @@ export default function VerifyEmailScreen() {
         return;
       }
 
-      const verifiedName = name || email.split('@')[0];
+      const verifiedName = (verifyResult as any)?.userData?.name || name || email.split('@')[0];
+      const verifiedPassword = (verifyResult as any)?.userData?.password || password;
       const verifiedEmail = email;
-      const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      console.log('📧 Code verified, creating Supabase Auth account...');
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: verifiedEmail,
+        password: verifiedPassword,
+        options: {
+          data: {
+            name: verifiedName,
+            full_name: verifiedName,
+            userType: 'normal',
+            email_confirmed: true,
+          },
+          emailRedirectTo: undefined,
+        },
+      });
+
+      if (signUpError) {
+        console.log('⚠️ Supabase signUp result:', signUpError.message);
+        if (!signUpError.message.includes('already registered') && !signUpError.message.includes('already exists')) {
+          throw new Error(signUpError.message);
+        }
+      }
+
+      const userId = signUpData?.user?.id || `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       const createdUser = await createUserMutation.mutateAsync({
         id: userId,

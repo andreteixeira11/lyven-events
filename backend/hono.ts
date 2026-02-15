@@ -3,8 +3,11 @@ import { cors } from "hono/cors";
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
+import { Resend } from "resend";
 
 const app = new Hono();
+
+const verificationStore = new Map<string, { code: string; name: string; password: string; expiresAt: number }>();
 
 app.use(
   "*",
@@ -106,6 +109,111 @@ function requireAdmin(c: any) {
 /* =====================================================
    TEST ENDPOINT
 ===================================================== */
+
+app.post("/send-verification-code", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { email, name, password } = body;
+
+    if (!email || !name || !password) {
+      return c.json({ success: false, error: "Email, nome e palavra-passe são obrigatórios." }, 400);
+    }
+
+    const apiKey = process.env.RESEND_API_KEY;
+    const fromEmail = process.env.RESEND_FROM_EMAIL || "Lyven <onboarding@resend.dev>";
+
+    if (!apiKey) {
+      console.error("[send-code] RESEND_API_KEY not configured");
+      return c.json({ success: false, error: "Serviço de email não configurado. Contacte o suporte." }, 500);
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000;
+
+    verificationStore.set(email.toLowerCase(), { code, name, password, expiresAt });
+
+    console.log(`[send-code] Generated code for ${email}: ${code}`);
+
+    const resend = new Resend(apiKey);
+    const result = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: "Código de Verificação - Lyven",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #6366F1; margin: 0;">Lyven</h1>
+          </div>
+          <div style="background-color: #f8f9fa; border-radius: 10px; padding: 30px; text-align: center;">
+            <h2 style="color: #333; margin-top: 0;">Código de Verificação</h2>
+            <p style="color: #666; font-size: 16px; margin-bottom: 30px;">
+              Olá ${name}, bem-vindo(a) ao Lyven! Use o código abaixo para verificar o seu email:
+            </p>
+            <div style="background-color: #fff; border: 2px solid #6366F1; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <span style="font-size: 32px; font-weight: bold; color: #6366F1; letter-spacing: 5px;">${code}</span>
+            </div>
+            <p style="color: #999; font-size: 14px; margin-top: 20px;">Este código é válido por 5 minutos.</p>
+          </div>
+          <div style="margin-top: 30px; text-align: center; color: #999; font-size: 12px;">
+            <p>Se não solicitou este código, pode ignorar este email.</p>
+          </div>
+        </div>
+      `,
+    });
+
+    if (result.error) {
+      console.error("[send-code] Resend error:", result.error);
+      return c.json({ success: false, error: result.error.message || "Falha ao enviar email." }, 500);
+    }
+
+    console.log("[send-code] Email sent successfully. Id:", result.data?.id);
+    return c.json({ success: true, message: "Código enviado para o seu email." });
+  } catch (err: any) {
+    console.error("[send-code] Error:", err);
+    return c.json({ success: false, error: err?.message || "Erro ao enviar código." }, 500);
+  }
+});
+
+app.post("/verify-code", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { email, code } = body;
+
+    if (!email || !code) {
+      return c.json({ success: false, error: "Email e código são obrigatórios." }, 400);
+    }
+
+    const record = verificationStore.get(email.toLowerCase());
+
+    if (!record) {
+      console.log("[verify-code] No record found for:", email);
+      return c.json({ success: false, error: "Código inválido ou expirado. Solicite um novo código." }, 400);
+    }
+
+    if (Date.now() > record.expiresAt) {
+      console.log("[verify-code] Code expired for:", email);
+      verificationStore.delete(email.toLowerCase());
+      return c.json({ success: false, error: "Código expirado. Solicite um novo código." }, 400);
+    }
+
+    if (record.code !== code) {
+      console.log("[verify-code] Invalid code for:", email, "expected:", record.code, "got:", code);
+      return c.json({ success: false, error: "Código inválido. Tente novamente." }, 400);
+    }
+
+    verificationStore.delete(email.toLowerCase());
+    console.log("[verify-code] Code verified successfully for:", email);
+
+    return c.json({
+      success: true,
+      verified: true,
+      userData: { email: record.name ? email : email, name: record.name, password: record.password },
+    });
+  } catch (err: any) {
+    console.error("[verify-code] Error:", err);
+    return c.json({ success: false, error: err?.message || "Erro ao verificar código." }, 500);
+  }
+});
 
 app.post("/test-login", async (c) => {
   try {
