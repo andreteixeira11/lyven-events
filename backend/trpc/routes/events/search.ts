@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { publicProcedure } from '../../create-context';
 import { db } from '@/backend/db';
 import { events } from '@/backend/db/schema';
-import { like, or, and, eq } from 'drizzle-orm';
+import { like, or, and, eq, gte } from 'drizzle-orm';
 
 export const searchEventsProcedure = publicProcedure
   .input(
@@ -43,15 +43,14 @@ export const searchEventsProcedure = publicProcedure
     }
 
     if (input.dateFrom) {
-      conditions.push(eq(events.date, input.dateFrom));
+      conditions.push(gte(events.date, new Date(input.dateFrom)));
     }
 
     const results = await db
       .select()
       .from(events)
       .where(and(...conditions))
-      .limit(input.limit)
-      .all();
+      .limit(input.limit);
 
     return results.map((event: any) => ({
       ...event,

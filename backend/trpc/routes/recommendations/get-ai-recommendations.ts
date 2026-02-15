@@ -35,7 +35,7 @@ export const getAIRecommendationsProcedure = publicProcedure
     const upcomingEvents = await db.query.events.findMany({
       where: and(
         eq(events.status, 'published'),
-        gte(events.date, new Date().toISOString())
+        gte(events.date, new Date())
       ),
       limit: 50,
     });

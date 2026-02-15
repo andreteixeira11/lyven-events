@@ -1,6 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
-import { executeRaw } from './index';
+import { existsSync } from 'fs';
 import { runMigration } from './migrate';
 import { seedDatabase } from './seed';
 
@@ -269,6 +267,13 @@ export async function initDatabase() {
   const useSupabase = !!process.env.SUPABASE_DATABASE_URL;
   const useTurso = !!process.env.TURSO_DATABASE_URL;
 
+  console.log('[init] Environment check - SUPABASE_DATABASE_URL:', useSupabase ? 'SET' : 'NOT SET');
+  console.log('[init] Environment check - SUPABASE_URL:', !!process.env.SUPABASE_URL ? 'SET' : 'NOT SET');
+  console.log('[init] Environment check - SUPABASE_SERVICE_ROLE_KEY:', !!process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
+  console.log('[init] Environment check - TURSO_DATABASE_URL:', useTurso ? 'SET' : 'NOT SET');
+
+  const { executeRaw: execRaw } = await import('./index');
+
   if (useSupabase) {
     console.log('🗄️  Supabase detected as database backend');
     try {
@@ -283,7 +288,7 @@ export async function initDatabase() {
 
       try {
         console.log('[init] Running PostgreSQL auto-migration on Supabase...');
-        await runPgMigration(executeRaw);
+        await runPgMigration(execRaw);
         console.log('✅ PostgreSQL tables ensured');
       } catch (migrationError) {
         console.error('⚠️  PostgreSQL migration error (non-fatal):', migrationError instanceof Error ? migrationError.message : migrationError);
@@ -304,32 +309,19 @@ export async function initDatabase() {
   if (useTurso) {
     console.log('🗄️  Turso detected. Running migration and seed...');
     try {
-      await runMigration(executeRaw);
+      await runMigration(execRaw);
       console.log('✅ Database migrated');
       await seedDatabase();
       console.log('✅ Database seeded');
     } catch (error) {
       console.error('❌ Database initialization failed:', error);
-      throw error;
     }
     return;
   }
 
   const dbExists = existsSync('events.db');
   if (!dbExists) {
-    console.log('🗄️  Database not found. Creating...');
-    try {
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
-      await execAsync('bun run backend/db/migrate.ts');
-      console.log('✅ Database migrated');
-      await execAsync('bun run backend/db/seed.ts');
-      console.log('✅ Database seeded');
-    } catch (error) {
-      console.error('❌ Database initialization failed:', error);
-      throw error;
-    }
+    console.log('🗄️  No database backend configured. Skipping DB init.');
   } else {
     console.log('✅ Database already exists');
   }

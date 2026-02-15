@@ -14,10 +14,10 @@ export const trackView = publicProcedure
   )
   .mutation(async ({ input }) => {
     try {
-      const now = new Date().toISOString();
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const now = new Date();
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-      const existingView = await db
+      const existingViews = await db
         .select()
         .from(eventViews)
         .where(
@@ -27,14 +27,15 @@ export const trackView = publicProcedure
             gt(eventViews.lastActiveAt, fiveMinutesAgo)
           )
         )
-        .get();
+        .limit(1);
+
+      const existingView = existingViews[0];
 
       if (existingView) {
         await db
           .update(eventViews)
           .set({ lastActiveAt: now })
-          .where(eq(eventViews.id, existingView.id))
-          .run();
+          .where(eq(eventViews.id, existingView.id));
       } else {
         const id = `view_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
         await db
@@ -42,12 +43,11 @@ export const trackView = publicProcedure
           .values({
             id,
             eventId: input.eventId,
-            userId: input.userId,
+            userId: input.userId ?? null,
             sessionId: input.sessionId,
             viewedAt: now,
             lastActiveAt: now,
-          })
-          .run();
+          });
       }
     } catch (err: any) {
       if (err?.message?.includes('no such table') || err?.message?.includes('event_views')) {

@@ -12,9 +12,9 @@ export const getActiveViewers = publicProcedure
   )
   .query(async ({ input }) => {
     try {
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-      const result = await db
+      const results = await db
         .select({ count: count() })
         .from(eventViews)
         .where(
@@ -22,12 +22,11 @@ export const getActiveViewers = publicProcedure
             eq(eventViews.eventId, input.eventId),
             gt(eventViews.lastActiveAt, fiveMinutesAgo)
           )
-        )
-        .get();
+        );
 
       return {
         eventId: input.eventId,
-        activeViewers: result?.count ?? 0,
+        activeViewers: results[0]?.count ?? 0,
       };
     } catch (err: any) {
       if (err?.message?.includes('no such table') || err?.message?.includes('event_views')) {

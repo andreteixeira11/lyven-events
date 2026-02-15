@@ -1,53 +1,139 @@
 /**
  * Database entry point: uses Supabase (PostgreSQL) when SUPABASE_DATABASE_URL is set,
- * otherwise uses Turso (libSQL). Uses dynamic imports to avoid crash when unused adapter's
- * native package is unavailable in the deployment environment.
+ * otherwise uses Turso (libSQL). Uses lazy initialization to avoid crashing the
+ * backend if the database adapter fails to load.
+ *
+ * Adds SQLite-compat methods (.get(), .all(), .run()) so existing route code works
+ * unchanged against PostgreSQL.
  */
 
-const useSupabase = !!process.env.SUPABASE_DATABASE_URL;
+import * as pgSchema from './schema.pg';
 
-let active: any = {};
-try {
-  if (useSupabase) {
-    console.log('[db] Loading Supabase adapter...');
-    active = await import('./supabase-db');
-  } else {
-    console.log('[db] Loading Turso adapter...');
-    active = await import('./turso-db');
+let _active: any = null;
+let _loadError: string | null = null;
+let _loadPromise: Promise<any> | null = null;
+
+function getUseSupabase(): boolean {
+  return !!process.env.SUPABASE_DATABASE_URL;
+}
+
+async function loadAdapter(): Promise<any> {
+  if (_active) return _active;
+  if (_loadError) return {};
+
+  try {
+    const useSupabase = getUseSupabase();
+    if (useSupabase) {
+      console.log('[db] Loading Supabase adapter...');
+      _active = await import('./supabase-db');
+    } else {
+      console.log('[db] Loading Turso adapter...');
+      _active = await import('./turso-db');
+    }
+    console.log('[db] Adapter loaded successfully, db exists:', !!_active?.db);
+    return _active;
+  } catch (err: any) {
+    _loadError = err?.message ?? String(err);
+    console.error('[db] Failed to load database adapter:', _loadError);
+    _active = {};
+    return _active;
   }
-  console.log('[db] Adapter loaded successfully, db exists:', !!active.db);
-} catch (err) {
-  console.error('[db] Failed to load database adapter:', err);
-  active = {};
 }
 
-if (!active.db) {
-  console.error(
-    useSupabase
-      ? '[db] SUPABASE_DATABASE_URL is set but db could not be initialized.'
-      : '[db] TURSO_DATABASE_URL/TURSO_AUTH_TOKEN missing or db could not be initialized.'
-  );
+export function ensureDbLoaded(): Promise<any> {
+  if (!_loadPromise) {
+    _loadPromise = loadAdapter();
+  }
+  return _loadPromise;
 }
 
-export const db: any = active.db ?? null;
-export const executeRaw = active.executeRaw ?? (async () => { throw new Error('Database not initialized'); });
+function getActive(): any {
+  return _active ?? {};
+}
 
-export const users = active.users;
-export const promoters = active.promoters;
-export const promoterProfiles = active.promoterProfiles;
-export const promoterAuth = active.promoterAuth;
-export const events = active.events;
-export const tickets = active.tickets;
-export const advertisements = active.advertisements;
-export const following = active.following;
-export const eventStatistics = active.eventStatistics;
-export const pushTokens = active.pushTokens;
-export const notifications = active.notifications;
-export const verificationCodes = active.verificationCodes;
-export const paymentMethods = active.paymentMethods;
-export const eventViews = active.eventViews;
-export const affiliates = active.affiliates;
-export const affiliateSales = active.affiliateSales;
-export const eventBundles = active.eventBundles;
-export const priceAlerts = active.priceAlerts;
-export const identityVerifications = active.identityVerifications;
+export function getDb(): any {
+  return getActive().db ?? null;
+}
+
+export async function getExecuteRaw(): Promise<(sql: string) => Promise<void>> {
+  const mod = await ensureDbLoaded();
+  if (mod?.executeRaw) return mod.executeRaw;
+  return async () => { throw new Error('Database not initialized'); };
+}
+
+export const executeRaw = async (sql: string): Promise<void> => {
+  const fn = await getExecuteRaw();
+  return fn(sql);
+};
+
+function wrapChainable(val: any): any {
+  if (!val || typeof val !== 'object') return val;
+
+  return new Proxy(val, {
+    get(target, prop) {
+      if (prop === 'get') {
+        return async () => {
+          const rows = await target;
+          return Array.isArray(rows) ? rows[0] ?? null : rows;
+        };
+      }
+      if (prop === 'all') {
+        return async () => {
+          const rows = await target;
+          return Array.isArray(rows) ? rows : [rows];
+        };
+      }
+      if (prop === 'run') {
+        return async () => {
+          await target;
+        };
+      }
+      if (prop === 'then' || prop === 'catch' || prop === 'finally') {
+        const fn = target[prop];
+        return fn ? fn.bind(target) : undefined;
+      }
+      if (prop === Symbol.toStringTag) return target[prop];
+
+      const inner = target[prop];
+      if (typeof inner === 'function') {
+        return (...args: any[]) => {
+          const result = inner.apply(target, args);
+          if (result && typeof result === 'object' && typeof result.then === 'function') {
+            return wrapChainable(result);
+          }
+          if (result && typeof result === 'object') {
+            return wrapChainable(result);
+          }
+          return result;
+        };
+      }
+      return inner;
+    },
+  });
+}
+
+export const db: any = new Proxy({} as any, {
+  get(_target, prop) {
+    const a = getActive();
+    if (!a?.db) return undefined;
+    const val = a.db[prop];
+    if (typeof val === 'function') {
+      return (...args: any[]) => {
+        const result = val.apply(a.db, args);
+        if (result && typeof result === 'object') {
+          return wrapChainable(result);
+        }
+        return result;
+      };
+    }
+    if (prop === 'query') {
+      return val;
+    }
+    return val;
+  },
+});
+
+export const { users, promoters, promoterProfiles, promoterAuth, events, tickets,
+  advertisements, following, eventStatistics, pushTokens, notifications,
+  verificationCodes, paymentMethods, eventViews, affiliates, affiliateSales,
+  eventBundles, priceAlerts, identityVerifications } = pgSchema;

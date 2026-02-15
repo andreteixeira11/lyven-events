@@ -1,12 +1,10 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { trpcServer } from "@hono/trpc-server";
+import { appRouter } from "./trpc/app-router";
+import { createContext } from "./trpc/create-context";
 
 const app = new Hono();
-
-/* =====================================================
-   CORS (APP MOBILE - PUBLICADA NAS STORES)
-   Mobile não precisa restrição de origin
-===================================================== */
 
 app.use(
   "*",
@@ -16,10 +14,6 @@ app.use(
     allowHeaders: ["Content-Type", "Authorization"],
   })
 );
-
-/* =====================================================
-   HEALTH CHECKS
-===================================================== */
 
 app.get("/", (c) =>
   c.json({
@@ -37,61 +31,54 @@ app.get("/health", (c) =>
   })
 );
 
-/* =====================================================
-   STATUS FLAGS
-===================================================== */
-
 let dbReady = false;
 let dbError: string | null = null;
 let bootPromise: Promise<void> | null = null;
 
-/* =====================================================
-   BOOT - DATABASE INIT
-===================================================== */
+function startBoot() {
+  if (bootPromise) return bootPromise;
+  bootPromise = (async () => {
+    try {
+      console.log("[boot] Initializing database...");
+      const { ensureDbLoaded } = await import("./db/index");
+      await ensureDbLoaded();
+      console.log("[boot] DB adapter loaded");
 
-bootPromise = (async () => {
-  try {
-    console.log("[boot] Initializing database...");
-    const { initDatabase } = await import("./db/init");
-    await initDatabase();
-    dbReady = true;
-    console.log("[boot] Database ready");
-  } catch (err: any) {
-    dbError = err?.message ?? String(err);
-    console.error("[boot] Database init failed:", err);
-  }
-})();
+      const { initDatabase } = await import("./db/init");
+      await initDatabase();
+      dbReady = true;
+      console.log("[boot] Database ready");
+    } catch (err: any) {
+      dbError = err?.message ?? String(err);
+      console.error("[boot] Database init failed:", dbError);
+      dbReady = true;
+    }
+  })();
+  return bootPromise;
+}
 
-/* =====================================================
-   tRPC HANDLER (registered synchronously)
-===================================================== */
+startBoot();
 
-import { trpcServer } from "@hono/trpc-server";
-import { appRouter } from "./trpc/app-router";
-import { createContext } from "./trpc/create-context";
+const trpcHandler = trpcServer({
+  router: appRouter,
+  createContext,
+  onError({ error, path }) {
+    console.error("[trpc] Error on", path, ":", error?.message);
+  },
+});
 
 app.use("/trpc/*", async (c, next) => {
   if (!dbReady && bootPromise) {
-    console.log("[trpc] Waiting for database boot to complete...");
+    console.log("[trpc] Waiting for database boot...");
     await bootPromise;
   }
-  if (!dbReady) {
-    console.error("[trpc] Database not ready:", dbError);
+  if (dbError) {
+    console.warn("[trpc] DB had error but proceeding:", dbError);
   }
   await next();
 });
 
-app.use(
-  "/trpc/*",
-  trpcServer({
-    endpoint: "/trpc",
-    router: appRouter,
-    createContext,
-    onError({ error, path }) {
-      console.error("[trpc] Error on", path, ":", error?.message);
-    },
-  })
-);
+app.use("/trpc/*", trpcHandler);
 
 /* =====================================================
    STATUS ENDPOINT
