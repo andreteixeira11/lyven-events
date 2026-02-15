@@ -41,13 +41,12 @@ app.get("/health", (c) =>
    STATUS FLAGS
 ===================================================== */
 
-let trpcReady = false;
-let trpcError: string | null = null;
 let dbReady = false;
+let dbError: string | null = null;
 let bootPromise: Promise<void> | null = null;
 
 /* =====================================================
-   BOOT - tRPC + DATABASE (sequential)
+   BOOT - DATABASE INIT
 ===================================================== */
 
 bootPromise = (async () => {
@@ -57,54 +56,42 @@ bootPromise = (async () => {
     await initDatabase();
     dbReady = true;
     console.log("[boot] Database ready");
-  } catch (err) {
-    console.error("[boot] Database init failed:", err);
-  }
-
-  try {
-    console.log("[boot] Loading tRPC...");
-
-    const { trpcServer } = await import("@hono/trpc-server");
-    const { appRouter } = await import("./trpc/app-router");
-    const { createContext } = await import("./trpc/create-context");
-
-    app.use(
-      "/trpc/*",
-      trpcServer({
-        endpoint: "/trpc",
-        router: appRouter,
-        createContext,
-        onError({ error, path }) {
-          console.error("[trpc] Error on", path, ":", error?.message);
-        },
-      })
-    );
-
-    trpcReady = true;
-    console.log("[boot] tRPC ready");
   } catch (err: any) {
-    trpcError = err?.message ?? String(err);
-    console.error("[boot] tRPC failed:", err);
+    dbError = err?.message ?? String(err);
+    console.error("[boot] Database init failed:", err);
   }
 })();
 
 /* =====================================================
-   WAIT FOR BOOT ON TRPC REQUESTS
+   tRPC HANDLER (registered synchronously)
 ===================================================== */
 
+import { trpcServer } from "@hono/trpc-server";
+import { appRouter } from "./trpc/app-router";
+import { createContext } from "./trpc/create-context";
+
 app.use("/trpc/*", async (c, next) => {
-  if (!trpcReady && bootPromise) {
-    console.log("[trpc] Waiting for boot to complete...");
+  if (!dbReady && bootPromise) {
+    console.log("[trpc] Waiting for database boot to complete...");
     await bootPromise;
   }
-  if (!trpcReady) {
-    return c.json(
-      { error: trpcError || "Backend is still starting. Try again in a moment." },
-      503
-    );
+  if (!dbReady) {
+    console.error("[trpc] Database not ready:", dbError);
   }
   await next();
 });
+
+app.use(
+  "/trpc/*",
+  trpcServer({
+    endpoint: "/trpc",
+    router: appRouter,
+    createContext,
+    onError({ error, path }) {
+      console.error("[trpc] Error on", path, ":", error?.message);
+    },
+  })
+);
 
 /* =====================================================
    STATUS ENDPOINT
@@ -113,9 +100,9 @@ app.use("/trpc/*", async (c, next) => {
 app.get("/status", (c) =>
   c.json({
     status: "ok",
-    trpcReady,
-    trpcError,
+    trpcReady: true,
     dbReady,
+    dbError,
     timestamp: new Date().toISOString(),
   })
 );

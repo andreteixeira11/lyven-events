@@ -70,11 +70,6 @@ const fetchWithRetry = async (url: string | URL | Request, options?: RequestInit
       }
 
       if (!response.ok) {
-        if (response.status === 404) {
-          console.warn('⚠️ Backend endpoint not found (404). Backend may still be starting.');
-          throw new BackendUnavailableError('Backend is starting up. Please wait a moment and try again.');
-        }
-
         if (response.status === 502 || response.status === 503 || response.status === 504) {
           throw new BackendUnavailableError('Backend is temporarily unavailable. Please try again.');
         }
@@ -82,8 +77,8 @@ const fetchWithRetry = async (url: string | URL | Request, options?: RequestInit
         const text = await response.clone().text();
         console.error('❌ Response error:', response.status, text.substring(0, 300));
 
-        if (!contentType?.includes('application/json')) {
-          throw new BackendUnavailableError('Server did not return a valid response. Status: ' + response.status);
+        if (response.status === 404 && !contentType?.includes('application/json')) {
+          throw new BackendUnavailableError('Backend endpoint not found. Please try again later.');
         }
       }
 
