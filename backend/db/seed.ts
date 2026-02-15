@@ -1,5 +1,4 @@
-import { db } from './index';
-import { promoters, events, users, promoterAuth, promoterProfiles, following } from './schema';
+import { db, promoters, events, users, promoterAuth, promoterProfiles, following } from './index';
 
 const anyDb = db as any;
 import { mockEvents } from './seed-data';

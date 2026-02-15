@@ -24,7 +24,7 @@ const MAX_RETRIES = 1;
 const RETRY_DELAY = 2000;
 
 class BackendUnavailableError extends Error {
-  constructor(message: string = 'Servidor temporariamente indisponível. Tente novamente.') {
+  constructor(message: string = 'Server temporarily unavailable. Please try again.') {
     super(message);
     this.name = 'BackendUnavailableError';
   }
@@ -66,30 +66,30 @@ const fetchWithRetry = async (url: string | URL | Request, options?: RequestInit
         if (text.includes('Service Temporarily Unavailable') || text.includes('temporarily unavailable')) {
           throw new BackendUnavailableError();
         }
-        throw new BackendUnavailableError('O servidor não está a responder corretamente. Tente novamente mais tarde.');
+        throw new BackendUnavailableError('Server is not responding correctly. Please try again later.');
       }
 
       if (!response.ok) {
         if (response.status === 404) {
-          console.warn('⚠️ Backend endpoint not found (404). Backend may not be deployed yet.');
-          throw new BackendUnavailableError('Backend não disponível. Verifique se o backend está configurado.');
+          console.warn('⚠️ Backend endpoint not found (404). Backend may still be starting.');
+          throw new BackendUnavailableError('Backend is starting up. Please wait a moment and try again.');
         }
 
         if (response.status === 502 || response.status === 503 || response.status === 504) {
-          throw new BackendUnavailableError();
+          throw new BackendUnavailableError('Backend is temporarily unavailable. Please try again.');
         }
 
         const text = await response.clone().text();
         console.error('❌ Response error:', response.status, text.substring(0, 300));
 
         if (!contentType?.includes('application/json')) {
-          throw new BackendUnavailableError('Servidor não retornou uma resposta válida.');
+          throw new BackendUnavailableError('Server did not return a valid response. Status: ' + response.status);
         }
       }
 
       if (response.ok && contentType && !contentType.includes('application/json')) {
         console.warn('⚠️ Response is not JSON:', contentType);
-        throw new BackendUnavailableError('Resposta inválida do servidor.');
+        throw new BackendUnavailableError('Invalid server response format.');
       }
 
       return response;

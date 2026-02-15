@@ -40,14 +40,18 @@ export async function verifySupabaseConnection(): Promise<boolean> {
   try {
     const supabase = getSupabase();
 
-    const { error } = await supabase.rpc('now'); // função Postgres padrão
+    const { data, error } = await supabase.from('users').select('id').limit(1);
 
     if (error) {
-      console.error('❌ Supabase connection error:', error.message);
+      if (error.code === '42P01') {
+        console.log('ℹ️  Supabase connected but tables not yet created (will auto-migrate)');
+        return true;
+      }
+      console.error('❌ Supabase connection error:', error.message, error.code);
       return false;
     }
 
-    console.log('✅ Supabase connection verified');
+    console.log('✅ Supabase connection verified, users table accessible');
     return true;
   } catch (error) {
     console.error('❌ Failed to verify Supabase connection:', error);
