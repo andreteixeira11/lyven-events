@@ -8,23 +8,23 @@ export const getBaseUrl = () => {
   try {
     const envUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
     if (envUrl) {
-      console.log('🌐 TRPC Base URL (backend):', envUrl);
-      return envUrl;
+      const cleanUrl = envUrl.replace(/\/+$/, '');
+      console.log('🌐 TRPC Base URL (backend):', cleanUrl);
+      return cleanUrl;
     }
-    const rorkUrl = `https://rork.app/pa/07mpjpnu098wcqwfiffs1/backend`;
-    console.log('🌐 Using default Rork backend URL:', rorkUrl);
-    return rorkUrl;
+    console.warn('⚠️ EXPO_PUBLIC_RORK_API_BASE_URL not set');
+    return '';
   } catch (error) {
     console.error('❌ Error getting base URL:', error);
-    return 'https://rork.app/pa/07mpjpnu098wcqwfiffs1/backend';
+    return '';
   }
 };
 
-const MAX_RETRIES = 2;
-const RETRY_DELAY = 1500;
+const MAX_RETRIES = 1;
+const RETRY_DELAY = 2000;
 
 class BackendUnavailableError extends Error {
-  constructor(message: string = 'O servidor está temporariamente indisponível. Tente novamente em alguns minutos.') {
+  constructor(message: string = 'Servidor temporariamente indisponível. Tente novamente.') {
     super(message);
     this.name = 'BackendUnavailableError';
   }
@@ -70,20 +70,26 @@ const fetchWithRetry = async (url: string | URL | Request, options?: RequestInit
       }
 
       if (!response.ok) {
-        const text = await response.clone().text();
-        console.error('❌ Response error:', response.status, text.substring(0, 300));
+        if (response.status === 404) {
+          console.warn('⚠️ Backend endpoint not found (404). Backend may not be deployed yet.');
+          throw new BackendUnavailableError('Backend não disponível. Verifique se o backend está configurado.');
+        }
 
         if (response.status === 502 || response.status === 503 || response.status === 504) {
           throw new BackendUnavailableError();
         }
 
+        const text = await response.clone().text();
+        console.error('❌ Response error:', response.status, text.substring(0, 300));
+
         if (!contentType?.includes('application/json')) {
-          throw new BackendUnavailableError('O servidor não retornou uma resposta válida.');
+          throw new BackendUnavailableError('Servidor não retornou uma resposta válida.');
         }
       }
 
       if (response.ok && contentType && !contentType.includes('application/json')) {
-        throw new BackendUnavailableError('O servidor retornou uma resposta inválida.');
+        console.warn('⚠️ Response is not JSON:', contentType);
+        throw new BackendUnavailableError('Resposta inválida do servidor.');
       }
 
       return response;
@@ -114,10 +120,12 @@ const fetchWithRetry = async (url: string | URL | Request, options?: RequestInit
 
 let trpcUrl: string;
 try {
-  trpcUrl = `${getBaseUrl()}/api/trpc`;
+  const base = getBaseUrl();
+  trpcUrl = base ? `${base}/api/trpc` : '/api/trpc';
+  console.log('🌐 tRPC URL:', trpcUrl);
 } catch (error) {
   console.error('❌ Error building tRPC URL:', error);
-  trpcUrl = 'https://rork.app/pa/07mpjpnu098wcqwfiffs1/backend/api/trpc';
+  trpcUrl = '/api/trpc';
 }
 
 let trpcReactClient: ReturnType<typeof trpc.createClient>;

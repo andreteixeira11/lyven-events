@@ -44,12 +44,23 @@ app.get("/health", (c) =>
 let trpcReady = false;
 let trpcError: string | null = null;
 let dbReady = false;
+let bootPromise: Promise<void> | null = null;
 
 /* =====================================================
-   BOOT - tRPC
+   BOOT - tRPC + DATABASE (sequential)
 ===================================================== */
 
-(async () => {
+bootPromise = (async () => {
+  try {
+    console.log("[boot] Initializing database...");
+    const { initDatabase } = await import("./db/init");
+    await initDatabase();
+    dbReady = true;
+    console.log("[boot] Database ready");
+  } catch (err) {
+    console.error("[boot] Database init failed:", err);
+  }
+
   try {
     console.log("[boot] Loading tRPC...");
 
@@ -78,20 +89,22 @@ let dbReady = false;
 })();
 
 /* =====================================================
-   BOOT - DATABASE
+   WAIT FOR BOOT ON TRPC REQUESTS
 ===================================================== */
 
-(async () => {
-  try {
-    console.log("[boot] Initializing database...");
-    const { initDatabase } = await import("./db/init");
-    await initDatabase();
-    dbReady = true;
-    console.log("[boot] Database ready");
-  } catch (err) {
-    console.error("[boot] Database init failed:", err);
+app.use("/trpc/*", async (c, next) => {
+  if (!trpcReady && bootPromise) {
+    console.log("[trpc] Waiting for boot to complete...");
+    await bootPromise;
   }
-})();
+  if (!trpcReady) {
+    return c.json(
+      { error: trpcError || "Backend is still starting. Try again in a moment." },
+      503
+    );
+  }
+  await next();
+});
 
 /* =====================================================
    STATUS ENDPOINT

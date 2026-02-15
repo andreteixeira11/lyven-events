@@ -29,9 +29,18 @@ try {
     defaultOptions: {
       queries: {
         staleTime: 1000 * 60 * 5,
-        retry: false,
+        retry: (failureCount, error) => {
+          const msg = (error as Error)?.message?.toLowerCase() ?? '';
+          if (msg.includes('404') || msg.includes('não disponível') || msg.includes('não retornou')) {
+            return false;
+          }
+          return failureCount < 1;
+        },
         refetchOnMount: false,
         refetchOnWindowFocus: false,
+      },
+      mutations: {
+        retry: false,
       },
     },
   });

@@ -79,7 +79,7 @@ export const handleError = (error: unknown): string => {
 
   // tRPC errors
   if (error && typeof error === 'object' && 'message' in error) {
-    const errorMessage = String(error.message);
+    const errorMessage = String((error as Error).message);
     
     if (errorMessage.includes('Credenciais inválidas') || errorMessage.includes('invalid')) {
       return 'Credenciais inválidas. Verifica o email e palavra-passe.';
@@ -91,10 +91,19 @@ export const handleError = (error: unknown): string => {
     
     const lowerMessage = errorMessage.toLowerCase();
     if (lowerMessage.includes('temporariamente indispon') || lowerMessage.includes('temporarily unavailable')) {
-      return 'O servidor está temporariamente indisponível. Tente novamente em alguns minutos.';
+      return 'Servidor temporariamente indisponível. Tente novamente em alguns minutos.';
+    }
+    if (lowerMessage.includes('não retornou uma resposta válida') || lowerMessage.includes('resposta inválida')) {
+      return 'Servidor temporariamente indisponível. Tente novamente em alguns minutos.';
+    }
+    if (lowerMessage.includes('backend não disponível') || lowerMessage.includes('backend may not be deployed')) {
+      return 'Servidor temporariamente indisponível. Tente novamente em alguns minutos.';
     }
     if (lowerMessage.includes('network') || lowerMessage.includes('fetch') || lowerMessage.includes('failed to fetch') || lowerMessage.includes('load failed')) {
       return 'Não foi possível conectar ao servidor. Verifique a sua ligação à internet e tente novamente.';
+    }
+    if (lowerMessage.includes('404')) {
+      return 'Servidor temporariamente indisponível. Tente novamente em alguns minutos.';
     }
     
     return errorMessage;
