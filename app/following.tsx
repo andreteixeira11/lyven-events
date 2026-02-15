@@ -21,7 +21,6 @@ export default function FollowingScreen() {
   const followingQuery = trpc.social.getFollowing.useQuery(
     {
       userId: user?.id || '',
-      type: 'promoter',
     },
     {
       enabled: !!user?.id,
@@ -29,8 +28,8 @@ export default function FollowingScreen() {
   );
 
   const promoters = React.useMemo(() => {
-    return followingQuery.data?.following.filter(
-      (item: any) => item.type === 'promoter'
+    return (followingQuery.data || []).filter(
+      (item: any) => item.promoterId
     ) || [];
   }, [followingQuery.data]);
 

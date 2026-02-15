@@ -26,8 +26,7 @@ export default function PromoterScreen() {
   const isFollowingQuery = trpc.social.isFollowing.useQuery(
     {
       userId: user?.id || '',
-      targetId: promoterId,
-      targetType: 'promoter',
+      promoterId: promoterId || '',
     },
     {
       enabled: !!user?.id,
@@ -39,10 +38,10 @@ export default function PromoterScreen() {
   const followMutation = trpc.social.follow.useMutation({
     onSuccess: async () => {
       await isFollowingQuery.refetch();
-      await utils.social.getFollowing.invalidate();
+      await utils.social.isFollowing.invalidate();
       console.log('Follow successful - promoter:', promoterId);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Follow error:', error);
     }
   });
@@ -50,10 +49,10 @@ export default function PromoterScreen() {
   const unfollowMutation = trpc.social.unfollow.useMutation({
     onSuccess: async () => {
       await isFollowingQuery.refetch();
-      await utils.social.getFollowing.invalidate();
+      await utils.social.isFollowing.invalidate();
       console.log('Unfollow successful - promoter:', promoterId);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Unfollow error:', error);
     }
   });
@@ -84,14 +83,12 @@ export default function PromoterScreen() {
     if (isFollowing) {
       unfollowMutation.mutate({
         userId: user.id,
-        targetId: promoterId,
-        targetType: 'promoter'
+        promoterId: promoterId,
       });
     } else {
       followMutation.mutate({
         userId: user.id,
-        targetId: promoterId,
-        targetType: 'promoter'
+        promoterId: promoterId,
       });
     }
   };

@@ -1,169 +1,197 @@
-import { createTRPCReact } from "@trpc/react-query";
-import { createTRPCClient, httpLink } from "@trpc/client";
-import type { AppRouter } from "@/backend/trpc/app-router";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  eventsApi,
+  authApi,
+  usersApi,
+  ticketsApi,
+  promotersApi,
+  socialApi,
+  notificationsApi,
+  paymentMethodsApi,
+  stripeApi,
+  emailsApi,
+  exampleApi,
+  analyticsApi,
+} from './supabase-api';
+import React from 'react';
 
-export const trpc = createTRPCReact<AppRouter>();
+function createQueryHook<TInput, TOutput>(
+  key: string[],
+  fn: (input: TInput) => Promise<TOutput>
+) {
+  return {
+    useQuery: (input?: TInput, opts?: Record<string, unknown>) => {
+      return useQuery<TOutput, Error>({
+        queryKey: [...key, input],
+        queryFn: () => fn(input as TInput),
+        enabled: opts?.enabled as boolean | undefined,
+        staleTime: opts?.staleTime as number | undefined,
+        refetchInterval: opts?.refetchInterval as number | false | undefined,
+        refetchOnMount: opts?.refetchOnMount as boolean | undefined,
+      });
+    },
+  };
+}
+
+function createMutationHook<TInput, TOutput>(
+  fn: (input: TInput) => Promise<TOutput>
+) {
+  return {
+    useMutation: (opts?: Record<string, unknown>) => {
+      return useMutation<TOutput, Error, TInput>({
+        mutationFn: fn,
+        onSuccess: opts?.onSuccess as ((data: TOutput) => void) | undefined,
+        onError: opts?.onError as ((error: Error) => void) | undefined,
+        onSettled: opts?.onSettled as (() => void) | undefined,
+      });
+    },
+  };
+}
+
+export const trpc = {
+  events: {
+    list: createQueryHook(['events', 'list'], eventsApi.list),
+    get: createQueryHook(['events', 'get'], eventsApi.get),
+    search: createQueryHook(['events', 'search'], eventsApi.search),
+    searchSuggestions: createQueryHook(['events', 'searchSuggestions'], eventsApi.searchSuggestions),
+    statistics: createQueryHook(['events', 'statistics'], eventsApi.statistics),
+    trackView: createMutationHook(eventsApi.trackView),
+    getActiveViewers: createQueryHook(['events', 'getActiveViewers'], eventsApi.getActiveViewers),
+    create: createMutationHook(eventsApi.create),
+  },
+  auth: {
+    login: createMutationHook(authApi.login),
+    sendVerificationCode: createMutationHook(authApi.sendVerificationCode),
+    verifyCode: createMutationHook(authApi.verifyCode),
+  },
+  users: {
+    create: createMutationHook(usersApi.create),
+    get: createQueryHook(['users', 'get'], usersApi.get),
+    list: createQueryHook(['users', 'list'], usersApi.list),
+    updateOnboarding: createMutationHook(usersApi.updateOnboarding),
+  },
+  tickets: {
+    list: createQueryHook(['tickets', 'list'], ticketsApi.list),
+    batchCreate: createMutationHook(ticketsApi.batchCreate),
+    validate: createMutationHook(ticketsApi.validate),
+    generateWalletPass: createMutationHook(ticketsApi.generateWalletPass),
+  },
+  promoters: {
+    getByUserId: createQueryHook(['promoters', 'getByUserId'], promotersApi.getByUserId),
+    list: createQueryHook(['promoters', 'list'], promotersApi.list),
+  },
+  social: {
+    follow: createMutationHook(socialApi.follow),
+    unfollow: createMutationHook(socialApi.unfollow),
+    isFollowing: createQueryHook(['social', 'isFollowing'], socialApi.isFollowing),
+    getFollowing: createQueryHook(['social', 'getFollowing'], socialApi.getFollowing),
+    getFollowers: createQueryHook(['social', 'getFollowers'], socialApi.getFollowers),
+  },
+  notifications: {
+    registerToken: createMutationHook(notificationsApi.registerToken),
+    list: createQueryHook(['notifications', 'list'], notificationsApi.list),
+    send: createMutationHook(notificationsApi.send),
+    markRead: createMutationHook(notificationsApi.markRead),
+  },
+  paymentMethods: {
+    list: createQueryHook(['paymentMethods', 'list'], paymentMethodsApi.list),
+    create: createMutationHook(paymentMethodsApi.create),
+    update: createMutationHook(paymentMethodsApi.update),
+    delete: createMutationHook(paymentMethodsApi.delete),
+    setPrimary: createMutationHook(paymentMethodsApi.setPrimary),
+  },
+  stripe: {
+    getConfig: createQueryHook(['stripe', 'getConfig'], stripeApi.getConfig),
+    createCheckout: createMutationHook(stripeApi.createCheckout),
+    createPaymentIntent: createMutationHook(stripeApi.createPaymentIntent),
+    getSession: {
+      useQuery: (input?: any, opts?: any) => {
+        return useQuery({
+          queryKey: ['stripe', 'getSession', input],
+          queryFn: () => stripeApi.getSession(input),
+          ...opts,
+        });
+      },
+    },
+  },
+  emails: {
+    sendTest: createMutationHook(emailsApi.sendTest),
+  },
+  example: {
+    hi: createMutationHook(exampleApi.hi),
+  },
+  analytics: {
+    dashboard: createQueryHook(['analytics', 'dashboard'], analyticsApi.dashboard),
+    events: createQueryHook(['analytics', 'events'], analyticsApi.events),
+    promoters: createQueryHook(['analytics', 'promoters'], analyticsApi.promoters),
+    revenue: createQueryHook(['analytics', 'revenue'], analyticsApi.revenue),
+    users: createQueryHook(['analytics', 'users'], analyticsApi.users),
+  },
+  useUtils: () => {
+    const queryClient = useQueryClient();
+    return {
+      social: {
+        isFollowing: {
+          invalidate: (input?: any) => queryClient.invalidateQueries({ queryKey: ['social', 'isFollowing', input] }),
+        },
+      },
+      events: {
+        list: {
+          invalidate: (input?: any) => queryClient.invalidateQueries({ queryKey: ['events', 'list', input] }),
+        },
+      },
+      tickets: {
+        list: {
+          invalidate: (input?: any) => queryClient.invalidateQueries({ queryKey: ['tickets', 'list', input] }),
+        },
+      },
+      notifications: {
+        list: {
+          invalidate: (input?: any) => queryClient.invalidateQueries({ queryKey: ['notifications', 'list', input] }),
+        },
+      },
+      paymentMethods: {
+        list: {
+          invalidate: (input?: any) => queryClient.invalidateQueries({ queryKey: ['paymentMethods', 'list', input] }),
+        },
+      },
+    };
+  },
+  Provider: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+};
+
+export const trpcClient = {
+  events: {
+    list: { query: eventsApi.list },
+    get: { query: eventsApi.get },
+    create: { mutate: eventsApi.create },
+    search: { query: eventsApi.search },
+    trackView: { mutate: eventsApi.trackView },
+    getActiveViewers: { query: eventsApi.getActiveViewers },
+  },
+  auth: {
+    login: { mutate: authApi.login },
+    sendVerificationCode: { mutate: authApi.sendVerificationCode },
+    verifyCode: { mutate: authApi.verifyCode },
+  },
+  users: {
+    create: { mutate: usersApi.create },
+    list: { query: usersApi.list },
+    updateOnboarding: { mutate: usersApi.updateOnboarding },
+  },
+  tickets: {
+    batchCreate: { mutate: ticketsApi.batchCreate },
+    validate: { mutate: ticketsApi.validate },
+  },
+  example: {
+    hi: { mutate: exampleApi.hi },
+  },
+};
+
+export const trpcReactClient = {};
 
 export const getBaseUrl = () => {
-  try {
-    const envUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
-    if (envUrl) {
-      const cleanUrl = envUrl.replace(/\/+$/, '');
-      console.log('🌐 TRPC Base URL (backend):', cleanUrl);
-      return cleanUrl;
-    }
-    console.warn('⚠️ EXPO_PUBLIC_RORK_API_BASE_URL not set');
-    return '';
-  } catch (error) {
-    console.error('❌ Error getting base URL:', error);
-    return '';
-  }
+  const envUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  if (envUrl) return envUrl;
+  return process.env.EXPO_PUBLIC_RORK_API_BASE_URL || '';
 };
-
-const MAX_RETRIES = 1;
-const RETRY_DELAY = 2000;
-
-class BackendUnavailableError extends Error {
-  constructor(message: string = 'Server temporarily unavailable. Please try again.') {
-    super(message);
-    this.name = 'BackendUnavailableError';
-  }
-}
-
-const createTimeoutSignal = (ms: number): AbortSignal => {
-  try {
-    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-      return AbortSignal.timeout(ms);
-    }
-  } catch (_e) {
-    console.log('AbortSignal.timeout not available, using fallback');
-  }
-  const controller = new AbortController();
-  setTimeout(() => controller.abort(), ms);
-  return controller.signal;
-};
-
-const fetchWithRetry = async (url: string | URL | Request, options?: RequestInit): Promise<Response> => {
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      if (attempt > 0) {
-        console.log(`🔄 Retry attempt ${attempt}/${MAX_RETRIES} for:`, String(url).substring(0, 100));
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
-      }
-
-      const response = await fetch(url, {
-        ...options,
-        signal: options?.signal ?? createTimeoutSignal(15000),
-      });
-
-      const contentType = response.headers.get('content-type');
-
-      if (contentType && contentType.includes('text/html')) {
-        const text = await response.clone().text();
-        console.error('❌ Backend returned HTML instead of JSON:', text.substring(0, 200));
-        if (text.includes('Service Temporarily Unavailable') || text.includes('temporarily unavailable')) {
-          throw new BackendUnavailableError();
-        }
-        throw new BackendUnavailableError('Server is not responding correctly. Please try again later.');
-      }
-
-      if (!response.ok) {
-        if (response.status === 502 || response.status === 503 || response.status === 504) {
-          throw new BackendUnavailableError('Backend is temporarily unavailable. Please try again.');
-        }
-
-        const text = await response.clone().text();
-        console.error('❌ Response error:', response.status, text.substring(0, 300));
-
-        if (response.status === 404 && !contentType?.includes('application/json')) {
-          throw new BackendUnavailableError('Backend endpoint not found. Please try again later.');
-        }
-      }
-
-      if (response.ok && contentType && !contentType.includes('application/json')) {
-        console.warn('⚠️ Response is not JSON:', contentType);
-        throw new BackendUnavailableError('Invalid server response format.');
-      }
-
-      return response;
-    } catch (error) {
-      lastError = error;
-
-      if (error instanceof BackendUnavailableError) {
-        console.error('❌ Backend unavailable:', error.message);
-        if (attempt === MAX_RETRIES) throw error;
-        console.warn(`⚠️ Backend unavailable, retry ${attempt + 1}/${MAX_RETRIES}...`);
-        continue;
-      }
-
-      const isNetworkError =
-        error instanceof TypeError ||
-        (error instanceof Error && error.message.toLowerCase().includes('network'));
-
-      if (!isNetworkError || attempt === MAX_RETRIES) {
-        console.error('❌ Fetch failed:', error);
-        throw error;
-      }
-      console.warn(`⚠️ Network error on attempt ${attempt + 1}, will retry...`);
-    }
-  }
-
-  throw lastError;
-};
-
-let trpcUrl: string;
-try {
-  const base = getBaseUrl();
-  trpcUrl = base ? `${base}/api/trpc` : '/api/trpc';
-  console.log('🌐 tRPC URL:', trpcUrl);
-} catch (error) {
-  console.error('❌ Error building tRPC URL:', error);
-  trpcUrl = '/api/trpc';
-}
-
-let trpcReactClient: ReturnType<typeof trpc.createClient>;
-let trpcClient: ReturnType<typeof createTRPCClient<AppRouter>>;
-
-try {
-  trpcReactClient = trpc.createClient({
-    links: [
-      httpLink({
-        url: trpcUrl,
-        fetch: fetchWithRetry,
-      }),
-    ],
-  });
-} catch (error) {
-  console.error('❌ Error creating tRPC React client:', error);
-  trpcReactClient = trpc.createClient({
-    links: [
-      httpLink({
-        url: trpcUrl,
-      }),
-    ],
-  });
-}
-
-try {
-  trpcClient = createTRPCClient<AppRouter>({
-    links: [
-      httpLink({
-        url: trpcUrl,
-        fetch: fetchWithRetry,
-      }),
-    ],
-  });
-} catch (error) {
-  console.error('❌ Error creating tRPC client:', error);
-  trpcClient = createTRPCClient<AppRouter>({
-    links: [
-      httpLink({
-        url: trpcUrl,
-      }),
-    ],
-  });
-}
-
-export { trpcReactClient, trpcClient };

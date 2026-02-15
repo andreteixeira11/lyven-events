@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Platform, Linking } from 'react-native';
-import { trpc } from '@/lib/trpc';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { stripeApi } from '@/lib/supabase-api';
 
 interface CheckoutOptions {
   eventId: string;
@@ -25,13 +26,19 @@ export function useStripe() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const configQuery = trpc.stripe.getConfig.useQuery(undefined, {
+  const configQuery = useQuery({
+    queryKey: ['stripe', 'getConfig'],
+    queryFn: () => stripeApi.getConfig(),
     staleTime: 1000 * 60 * 5,
   });
 
-  const createCheckoutMutation = trpc.stripe.createCheckout.useMutation();
-  const createPaymentIntentMutation = trpc.stripe.createPaymentIntent.useMutation();
-  const getSessionQuery = trpc.stripe.getSession.useQuery;
+  const createCheckoutMutation = useMutation({ mutationFn: stripeApi.createCheckout });
+  const createPaymentIntentMutation = useMutation({ mutationFn: stripeApi.createPaymentIntent });
+  const getSessionQuery = (input: { sessionId: string }, opts?: any) => useQuery({
+    queryKey: ['stripe', 'getSession', input],
+    queryFn: () => stripeApi.getSession(input),
+    ...opts,
+  });
 
   const isConfigured = configQuery.data?.isConfigured ?? false;
   const publishableKey = configQuery.data?.publishableKey ?? null;

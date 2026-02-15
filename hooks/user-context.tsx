@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { User, UserType, PromoterProfile } from '@/types/user';
 import { createDefaultUser } from '@/constants/onboarding';
-import { trpcClient } from '@/lib/trpc';
+import { usersApi } from '@/lib/supabase-api';
 
 export const [UserProvider, useUser] = createContextHook(() => {
   const [user, setUser] = useState<User | null>(null);
@@ -142,7 +142,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
     const language = userData.preferences?.language;
     const supportedLanguage = language === 'pt' || language === 'en' ? language : 'pt';
     
-    trpcClient.users.updateOnboarding.mutate({
+    usersApi.updateOnboarding({
       id: user.id,
       phone: userData.phone,
       interests: userData.interests,

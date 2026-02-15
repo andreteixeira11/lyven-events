@@ -14,7 +14,7 @@ export default function TestTursoConnectionScreen() {
     try {
       setTestResult(prev => prev + '1️⃣ Testando query de exemplo...\n');
       const hiResult = await trpcClient.example.hi.mutate({ name: 'Turso Test' });
-      setTestResult(prev => prev + `✅ Backend respondeu: "${hiResult.hello}"\n\n`);
+      setTestResult(prev => prev + `✅ Backend respondeu: "${hiResult.greeting}"\n\n`);
 
       setTestResult(prev => prev + '2️⃣ Buscando eventos da base de dados...\n');
       const events = await trpcClient.events.list.query();
@@ -28,7 +28,7 @@ export default function TestTursoConnectionScreen() {
 
       setTestResult(prev => prev + '3️⃣ Buscando utilizadores...\n');
       const usersData = await trpcClient.users.list.query({ limit: 5 });
-      const users = usersData.users;
+      const users = usersData as any[];
       setTestResult(prev => prev + `✅ Encontrados ${users.length} utilizadores\n`);
       
       if (users.length > 0) {

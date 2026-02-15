@@ -35,7 +35,7 @@ type ListEvent = {
 
 function EventCard({ event }: { event: ListEvent }) {
   const { data: stats } = trpc.events.statistics.useQuery(
-    { id: event.id },
+    { eventId: event.id },
     { enabled: !!event.id }
   );
   const soldTickets = stats?.totalTicketsSold ?? 0;
@@ -127,8 +127,8 @@ function PromoterEventsContent() {
 
   const events = eventsList ?? [];
   const now = new Date();
-  const upcomingEvents = events.filter((e: { date: string }) => new Date(e.date) >= now);
-  const pastEvents = events.filter((e: { date: string }) => new Date(e.date) < now);
+  const upcomingEvents = events.filter((e: any) => new Date(e.date) >= now);
+  const pastEvents = events.filter((e: any) => new Date(e.date) < now);
   const currentEvents = selectedTab === 'upcoming' ? upcomingEvents : pastEvents;
 
   const onRetry = () => {

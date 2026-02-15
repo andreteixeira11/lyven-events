@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Platform } from 'react-native';
 import createContextHook from '@nkzw/create-context-hook';
-import { trpc } from '@/lib/trpc';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { notificationsApi } from '@/lib/supabase-api';
 import { useUser } from './user-context';
 
 let Notifications: typeof import('expo-notifications') | null = null;
@@ -97,11 +98,12 @@ export const [NotificationsContext, useNotifications] = createContextHook(() => 
   const responseListener = useRef<any>(null);
   const registeredRef = useRef(false);
 
-  const registerTokenMutation = trpc.notifications.registerToken.useMutation();
-  const notificationsQuery = trpc.notifications.list.useQuery(
-    { userId: user?.id || '' },
-    { enabled: !!user?.id }
-  );
+  const registerTokenMutation = useMutation({ mutationFn: notificationsApi.registerToken });
+  const notificationsQuery = useQuery({
+    queryKey: ['notifications', 'list', user?.id],
+    queryFn: () => notificationsApi.list({ userId: user?.id || '' }),
+    enabled: !!user?.id,
+  });
 
   useEffect(() => {
     if (Platform.OS === 'web' || !Notifications) {

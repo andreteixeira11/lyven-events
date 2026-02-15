@@ -77,7 +77,6 @@ export default function QRScannerScreen() {
       // Validar bilhete no backend
       const result = await trpcClient.tickets.validate.mutate({ 
         qrCode: data,
-        validatedBy: user?.id,
       });
       
       console.log('✅ Resultado da validação:', result);

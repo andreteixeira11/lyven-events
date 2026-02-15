@@ -20,16 +20,16 @@ export default function GetUsersScreen() {
 
         {data && (
           <View style={styles.results}>
-            <Text style={styles.title}>Total de utilizadores: {data.users.length}</Text>
+            <Text style={styles.title}>Total de utilizadores: {(data as any[]).length}</Text>
             
-            {data.users.map((user: { id: string; name: string; email: string; phone?: string | null; userType: string; createdAt: string; isOnboardingComplete: boolean }) => (
+            {(data as any[]).map((user: { id: string; name: string; email: string; phone?: string | null; userType: string; createdAt: string; isOnboardingComplete: boolean; user_type?: string; created_at?: string; is_onboarding_complete?: boolean }) => (
               <View key={user.id} style={styles.userCard}>
                 <Text style={styles.userName}>Nome: {user.name}</Text>
                 <Text style={styles.userEmail}>Email: {user.email}</Text>
                 {user.phone && <Text style={styles.userPhone}>Telefone: {user.phone}</Text>}
-                <Text style={styles.userType}>Tipo: {user.userType}</Text>
-                <Text style={styles.userDate}>Registado: {new Date(user.createdAt).toLocaleDateString('pt-PT')}</Text>
-                <Text style={styles.userOnboarding}>Onboarding: {user.isOnboardingComplete ? 'Completo' : 'Incompleto'}</Text>
+                <Text style={styles.userType}>Tipo: {user.userType || user.user_type}</Text>
+                <Text style={styles.userDate}>Registado: {new Date(user.createdAt || user.created_at || '').toLocaleDateString('pt-PT')}</Text>
+                <Text style={styles.userOnboarding}>Onboarding: {(user.isOnboardingComplete || user.is_onboarding_complete) ? 'Completo' : 'Incompleto'}</Text>
               </View>
             ))}
           </View>

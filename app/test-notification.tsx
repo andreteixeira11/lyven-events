@@ -14,17 +14,17 @@ export default function TestNotificationScreen() {
   const [message, setMessage] = useState('Esta é uma notificação de teste!');
 
   const sendNotificationMutation = trpc.notifications.send.useMutation({
-    onSuccess: (data) => {
+    onSuccess: ((data: any) => {
       console.log('✅ Notificação enviada com sucesso:', data);
       Alert.alert(
         'Sucesso!',
-        `Notificação enviada para ${data.sent} dispositivo(s)`
+        'Notificação enviada com sucesso'
       );
-    },
-    onError: (error) => {
+    }) as any,
+    onError: ((error: Error) => {
       console.error('❌ Erro ao enviar notificação:', error);
       Alert.alert('Erro', 'Falha ao enviar notificação: ' + error.message);
-    },
+    }) as any,
   });
 
   const handleSendNotification = () => {

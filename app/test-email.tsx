@@ -10,29 +10,29 @@ export default function TestEmailScreen() {
   const [hasSent, setHasSent] = useState(false);
   
   const sendTestMutation = trpc.emails.sendTest.useMutation({
-    onSuccess: (data) => {
+    onSuccess: ((data: any) => {
       setResult('Email enviado com sucesso para info@lyven.pt!');
       Alert.alert('Sucesso', 'Email de teste enviado com sucesso!');
       console.log('Email enviado:', data);
-    },
-    onError: (error) => {
+    }) as any,
+    onError: ((error: Error) => {
       setResult(`Erro ao enviar email: ${error.message}`);
       Alert.alert('Erro', `Falha ao enviar email: ${error.message}`);
       console.error('Erro:', error);
-    },
+    }) as any,
   });
 
   useEffect(() => {
     if (!hasSent) {
       setResult('Enviando email...');
-      sendTestMutation.mutate();
+      sendTestMutation.mutate({ to: 'info@lyven.pt' } as any);
       setHasSent(true);
     }
   }, [hasSent]);
 
   const handleSendTest = () => {
     setResult('Enviando email...');
-    sendTestMutation.mutate();
+    sendTestMutation.mutate({ to: 'info@lyven.pt' } as any);
   };
 
   return (

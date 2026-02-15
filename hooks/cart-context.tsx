@@ -2,7 +2,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { CartItem, PurchasedTicket } from '@/types/event';
-import { trpcClient } from '@/lib/trpc';
+import { ticketsApi } from '@/lib/supabase-api';
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -136,7 +136,7 @@ export const [CartProvider, useCart] = createContextHook<CartContextType>(() => 
         };
       });
 
-      await trpcClient.tickets.batchCreate.mutate({ tickets: ticketsToCreate });
+      await ticketsApi.batchCreate({ tickets: ticketsToCreate });
       console.log('✅ Bilhetes criados no backend com sucesso');
 
       const newTickets: PurchasedTicket[] = ticketsToCreate.map((ticket) => ({
@@ -178,7 +178,7 @@ export const [CartProvider, useCart] = createContextHook<CartContextType>(() => 
         validUntil: validUntil.toISOString(),
       };
 
-      await trpcClient.tickets.batchCreate.mutate({ tickets: [ticketToCreate] });
+      await ticketsApi.batchCreate({ tickets: [ticketToCreate] });
       console.log('✅ Bilhete 1-Click criado com sucesso');
 
       const newTicket: PurchasedTicket = {

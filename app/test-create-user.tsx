@@ -87,7 +87,7 @@ export default function TestCreateUser() {
 
     try {
       const response = await listUsersQuery.refetch();
-      const users = response.data?.users || [];
+      const users = (response.data as any[]) || [];
       setResult((prev) => prev + `✅ Encontrados ${users.length} utilizadores!\n\n`);
       setResult((prev) => prev + JSON.stringify(users, null, 2) + '\n');
     } catch (error: any) {

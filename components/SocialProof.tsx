@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Eye } from 'lucide-react-native';
-import { trpcClient } from '@/lib/trpc';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { eventsApi } from '@/lib/supabase-api';
 
 interface SocialProofProps {
   eventId: string;
@@ -17,14 +17,14 @@ export function SocialProof({ eventId }: SocialProofProps) {
 
   const { data } = useQuery({
     queryKey: ['activeViewers', eventId],
-    queryFn: () => trpcClient.events.getActiveViewers.query({ eventId }),
+    queryFn: () => eventsApi.getActiveViewers({ eventId }),
     refetchInterval: 10000,
   });
 
   useEffect(() => {
     const trackView = async () => {
       try {
-        await trpcClient.events.trackView.mutate({
+        await eventsApi.trackView({
           eventId,
           sessionId,
         });

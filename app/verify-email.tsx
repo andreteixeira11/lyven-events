@@ -151,7 +151,7 @@ export default function VerifyEmailScreen() {
 
     try {
       const verifyResult = await verifyCodeMutation.mutateAsync({ email, code: codeToVerify });
-      if (!verifyResult?.success || !verifyResult.userData) {
+      if (!verifyResult?.success) {
         setErrorMessage('Código inválido ou expirado.');
         setCode(Array(CODE_LENGTH).fill(''));
         inputRefs.current[0]?.focus();
@@ -159,7 +159,8 @@ export default function VerifyEmailScreen() {
         return;
       }
 
-      const { name: verifiedName, email: verifiedEmail } = verifyResult.userData;
+      const verifiedName = name || email.split('@')[0];
+      const verifiedEmail = email;
       const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       const createdUser = await createUserMutation.mutateAsync({

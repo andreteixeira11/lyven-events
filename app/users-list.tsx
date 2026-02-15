@@ -21,7 +21,6 @@ import { trpc } from '@/lib/trpc';
 export default function UsersListScreen() {
   const usersQuery = trpc.users.list.useQuery({
     limit: 100,
-    offset: 0,
   });
 
   const getUserTypeLabel = (type: string) => {
@@ -85,7 +84,7 @@ export default function UsersListScreen() {
     );
   }
 
-  const users = usersQuery.data?.users || [];
+  const users = (usersQuery.data as any[]) || [];
 
   return (
     <SafeAreaView style={styles.container}>

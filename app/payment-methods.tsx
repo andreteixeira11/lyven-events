@@ -73,7 +73,7 @@ export default function PaymentMethods() {
       resetForm();
       Alert.alert('Sucesso', 'Método de pagamento adicionado com sucesso!');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       Alert.alert('Erro', error.message || 'Erro ao adicionar método de pagamento');
     },
   });
@@ -86,7 +86,7 @@ export default function PaymentMethods() {
       resetForm();
       Alert.alert('Sucesso', 'Método de pagamento atualizado com sucesso!');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       Alert.alert('Erro', error.message || 'Erro ao atualizar método de pagamento');
     },
   });
@@ -96,7 +96,7 @@ export default function PaymentMethods() {
       methodsQuery.refetch();
       Alert.alert('Sucesso', 'Método de pagamento removido com sucesso!');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       Alert.alert('Erro', error.message || 'Erro ao remover método de pagamento');
     },
   });

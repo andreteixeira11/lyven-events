@@ -19,7 +19,7 @@ import { useUser } from '@/hooks/user-context';
 import { router } from 'expo-router';
 import { RADIUS, SHADOWS, SPACING } from '@/constants/colors';
 import { useTheme } from '@/hooks/theme-context';
-import { trpc, getBaseUrl } from '@/lib/trpc';
+import { trpc } from '@/lib/trpc';
 import { handleError } from '@/lib/error-handler';
 import { LoadingSpinner } from '@/components/LoadingStates';
 
@@ -32,7 +32,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [backendReachable, setBackendReachable] = useState<boolean | null>(null);
+  const [backendReachable, setBackendReachable] = useState<boolean | null>(true);
   
   const { updateUser } = useUser();
   const { colors } = useTheme();
@@ -41,41 +41,9 @@ export default function LoginScreen() {
   const loginMutation = trpc.auth.login.useMutation();
   const sendCodeMutation = trpc.auth.sendVerificationCode.useMutation();
 
-  const checkBackendHealth = async (): Promise<boolean> => {
-    try {
-      const base = getBaseUrl();
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      const res = await fetch(`${base}/api/health`, { 
-        method: 'GET',
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) return false;
-      const contentType = res.headers.get('content-type');
-      if (!contentType?.includes('application/json')) {
-        console.warn('⚠️ Health check returned non-JSON:', contentType);
-        return false;
-      }
-      const data = await res.json();
-      return data?.status === 'ok';
-    } catch {
-      return false;
-    }
-  };
-
   const checkBackend = () => {
-    setBackendReachable(null);
-    checkBackendHealth().then(setBackendReachable);
+    setBackendReachable(true);
   };
-
-  useEffect(() => {
-    let cancelled = false;
-    checkBackendHealth().then((ok) => {
-      if (!cancelled) setBackendReachable(ok);
-    });
-    return () => { cancelled = true; };
-  }, []);
   
   const saveUser = async (userData: any) => {
     await updateUser(userData);
@@ -230,17 +198,8 @@ export default function LoginScreen() {
       }
     } catch (error) {
       console.error('❌ Erro durante autenticação:', error);
-      let errorMessage = handleError(error);
-      if (errorMessage.includes('Cannot reach the server')) {
-        const base = getBaseUrl();
-        const isLocalhost = base.includes('localhost') || base.includes('127.0.0.1');
-        errorMessage += ` (Backend: ${base}).`;
-        if (isLocalhost) {
-          errorMessage += ' Start backend: npm run start:all (or npm run start:backend in another terminal).';
-          errorMessage += ' On phone? Use your PC IP in .env instead of localhost, then restart Expo.';
-        }
-      }
-      setErrorMessage(errorMessage);
+      const errMsg = handleError(error);
+      setErrorMessage(errMsg);
     } finally {
       setIsLoading(false);
     }
@@ -254,23 +213,7 @@ export default function LoginScreen() {
           style={styles.keyboardView}
         >
           <ScrollView contentContainerStyle={styles.scrollContent}>
-            {backendReachable === false && (
-              <View style={[styles.backendBanner, { backgroundColor: colors.error + '20', borderColor: colors.error }]}>
-                <Text style={[styles.backendBannerTitle, { color: colors.error }]}>Serviço temporariamente indisponível</Text>
-                <Text style={[styles.backendBannerText, { color: colors.text }]}>
-                  O que pode fazer agora: aguarde um momento e toque em &ldquo;Tentar novamente&rdquo; abaixo. Se continuar, tente mais tarde ou contacte o suporte.
-                </Text>
-                <TouchableOpacity
-                  style={[styles.retryBackendButton, { backgroundColor: colors.primary }]}
-                  onPress={checkBackend}
-                >
-                  <Text style={styles.retryBackendButtonText}>Tentar novamente</Text>
-                </TouchableOpacity>
-                <Text style={[styles.backendBannerSubtext, { color: colors.textSecondary }]}>
-                  (Para programadores: Backend {getBaseUrl()} — No PC: npm run start:all. No telemóvel: use o IP do PC em .env e reinicie o Expo.)
-                </Text>
-              </View>
-            )}
+
             <View style={styles.header}>
                 <Animated.View
                   style={[

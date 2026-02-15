@@ -88,10 +88,14 @@ export default function CreateEvent() {
       const event = await trpcClient.events.get.query({ id });
       console.log('✅ Evento carregado:', event);
 
+      if (!event) {
+        throw new Error('Evento não encontrado');
+      }
+
       const eventDate = new Date(event.date);
       const eventTime = new Date(event.date);
 
-      const ticketTypes = event.ticketTypes.map((ticket: any, index: number) => ({
+      const ticketTypes = (event.ticketTypes || []).map((ticket: any, index: number) => ({
         id: (index + 1).toString(),
         name: ticket.name,
         stage: ticket.stage || '',
@@ -103,8 +107,8 @@ export default function CreateEvent() {
       setFormData({
         title: event.title,
         description: event.description || '',
-        venue: event.venue.name,
-        address: event.venue.address,
+        venue: event.venue?.name || '',
+        address: event.venue?.address || '',
         date: eventDate,
         time: eventTime,
         category: event.category,

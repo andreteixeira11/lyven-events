@@ -55,14 +55,13 @@ export default function MyTicketsScreen() {
     try {
       const result = await generateWalletPassMutation.mutateAsync({
         ticketId,
-        platform,
       });
       
-      if (result.success && result.url) {
-        const supported = await Linking.canOpenURL(result.url);
+      if (result.success && result.passUrl) {
+        const supported = await Linking.canOpenURL(result.passUrl);
         
         if (supported) {
-          await Linking.openURL(result.url);
+          await Linking.openURL(result.passUrl);
         } else {
           Alert.alert(
             'Erro',
